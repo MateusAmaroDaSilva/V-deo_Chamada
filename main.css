@@ -2,45 +2,84 @@ body {
     background: #0F2027;
     background: -webkit-linear-gradient(to right, #2C5364, #203A43, #0F2027);
     background: linear-gradient(to right, #2C5364, #203A43, #0F2027);
+    margin: 0;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
 }
 
 #join-btn {
     position: fixed;
     top: 50%;
     left: 50%;
-    margin-top: -50px;
-    margin-left: -100px;
+    transform: translate(-50%, -50%);
     font-size: 18px;
     padding: 20px 40px;
+    background-color: cadetblue;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    z-index: 1000;
+}
+
+#stream-wrapper {
+    display: none; /* Esconde o wrapper até que o usuário entre na chamada */
+    flex-direction: column;
+    align-items: flex-start; /* Alinhado à esquerda */
+    justify-content: flex-start; /* Move para o topo */
+    height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
 #video-streams {
     display: grid;
-    grid-template-columns: repeat(2, 1fr); 
-    gap: 20px; 
-    height: 90vh; 
-    width: 100%;
-    margin: 0 auto;
-    justify-items: center; 
-    align-items: center; 
+    grid-template-columns: repeat(2, 1fr); /* Duas colunas */
+    gap: 10px; /* Espaçamento entre as câmeras */
+    width: 50vw; /* Metade da largura da tela */
+    padding: 10px;
+    border: 4px solid #000;
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 10px;
+    margin-bottom: 20px; /* Espaço entre câmeras e botões */
+    position: relative;
+    left: 0; /* Move para o canto esquerdo */
 }
 
 .video-container {
     width: 100%;
-    max-width: 600px;
-    border: 4px solid rgb(11, 11, 9);
+    max-width: 320px; /* Largura máxima das câmeras */
+    max-height: 180px; /* Altura máxima das câmeras */
+    border: 2px solid black; /* Borda das câmeras */
     background-color: #203A49;
     display: flex;
     justify-content: center;
     align-items: center;
-    aspect-ratio: 16/9; 
+    aspect-ratio: 16/9; /* Mantém a proporção */
     overflow: hidden;
+    border-radius: 10px; /* Bordas arredondadas */
 }
 
 .video-player {
     width: 100%;
     height: 100%;
-    object-fit: cover; 
+    object-fit: cover; /* Ajusta o conteúdo do vídeo */
+}
+
+#stream-controls-wrapper {
+    display: none; /* Esconde o wrapper dos controles até que o usuário entre na chamada */
+    width: 50vw; /* Mesmo tamanho que as câmeras */
+    padding: 10px;
+    border: 4px solid #000;
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 10px;
+    position: relative;
+    left: 0; /* Move para o canto esquerdo */
+}
+
+#stream-controls {
+    display: flex;
+    justify-content: center;
+    gap: 20px; /* Espaçamento entre os botões */
 }
 
 button {
@@ -49,22 +88,12 @@ button {
     color: #fff;
     padding: 10px 20px;
     font-size: 16px;
-    margin: 2px;
     cursor: pointer;
 }
 
-#stream-controls {
-    display: none;
-    justify-content: center;
-    margin-top: 0.5em;
-}
-
-@media screen and (max-width: 1400px) {
-    #video-streams {
-        grid-template-columns: 1fr; 
-    }
-
-    .video-container {
-        width: 95%;
+@media screen and (max-width: 768px) {
+    #video-streams,
+    #stream-controls-wrapper {
+        width: 100vw; /* Ajusta para a largura total da tela em dispositivos pequenos */
     }
 }
