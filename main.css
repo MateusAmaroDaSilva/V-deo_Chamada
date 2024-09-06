@@ -22,10 +22,10 @@ body {
 }
 
 #stream-wrapper {
-    display: none; /* Esconde o wrapper até que o usuário entre na chamada */
+    display: none; 
     flex-direction: column;
-    align-items: flex-start; /* Alinhado à esquerda */
-    justify-content: flex-start; /* Move para o topo */
+    align-items: flex-start; 
+    justify-content: flex-start; 
     height: 100vh;
     padding: 20px;
     box-sizing: border-box;
@@ -33,53 +33,53 @@ body {
 
 #video-streams {
     display: grid;
-    grid-template-columns: repeat(2, 1fr); /* Duas colunas */
-    gap: 10px; /* Espaçamento entre as câmeras */
-    width: 50vw; /* Metade da largura da tela */
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 10px; 
+    width: 50vw; 
     padding: 10px;
     border: 4px solid #000;
     background-color: rgba(0, 0, 0, 0.7);
     border-radius: 10px;
-    margin-bottom: 20px; /* Espaço entre câmeras e botões */
+    margin-bottom: 20px; 
     position: relative;
-    left: 0; /* Move para o canto esquerdo */
+    left: 0; 
 }
 
 .video-container {
     width: 100%;
-    max-width: 320px; /* Largura máxima das câmeras */
-    max-height: 180px; /* Altura máxima das câmeras */
-    border: 2px solid black; /* Borda das câmeras */
+    max-width: 320px;
+    max-height: 180px; 
+    border: 2px solid black; 
     background-color: #203A49;
     display: flex;
     justify-content: center;
     align-items: center;
-    aspect-ratio: 16/9; /* Mantém a proporção */
+    aspect-ratio: 16/9; 
     overflow: hidden;
-    border-radius: 10px; /* Bordas arredondadas */
+    border-radius: 10px; 
 }
 
 .video-player {
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Ajusta o conteúdo do vídeo */
+    object-fit: cover; 
 }
 
 #stream-controls-wrapper {
-    display: none; /* Esconde o wrapper dos controles até que o usuário entre na chamada */
-    width: 50vw; /* Mesmo tamanho que as câmeras */
+    display: none; 
+    width: 50vw; 
     padding: 10px;
     border: 4px solid #000;
     background-color: rgba(0, 0, 0, 0.7);
     border-radius: 10px;
     position: relative;
-    left: 0; /* Move para o canto esquerdo */
+    left: 0; 
 }
 
 #stream-controls {
     display: flex;
     justify-content: center;
-    gap: 20px; /* Espaçamento entre os botões */
+    gap: 20px;
 }
 
 button {
@@ -94,6 +94,6 @@ button {
 @media screen and (max-width: 768px) {
     #video-streams,
     #stream-controls-wrapper {
-        width: 100vw; /* Ajusta para a largura total da tela em dispositivos pequenos */
+        width: 100vw; 
     }
 }
