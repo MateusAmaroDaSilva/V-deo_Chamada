@@ -3,26 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Projeto chamadas</title>
-    <link rel="stylesheet" type='text/css' madia='screen' href="main.css">
+    <title>Projeto Chamadas</title>
+    <link rel="stylesheet" type='text/css' media='screen' href="main.css">
 </head>
 <body>
     
     <button id="join-btn">Começar</button>
 
-    <div id="stream-wrapper">
+    <div id="stream-wrapper" style="display: none;">
         <div id="video-streams"></div>
 
-        <div id="stream-controls">
+        <div id="stream-controls-wrapper" style="display: none;">
             <button id="leave-btn">Sair da transmissão</button>
             <button id="mic-btn">Mic On</button>
             <button id="camera-btn">Camera On</button>
-            <button id="share-screen-btn">Compartilhar Tela</button> 
+            <button id="share-screen-btn">Compartilhar Tela</button>
         </div>
     </div>
-     
-</body>
 
- <script src='AgoraRTC_N-4.22.0.js'></script>
-<script src='main.js'></script>
+    <div id="chat-wrapper" style="display: none;">
+        <div id="chat-box"></div>
+        <input type="text" id="chat-input" placeholder="Digite uma mensagem..." />
+        <button id="send-message">Enviar</button>
+    </div>
+     
+    <script src='AgoraRTC_N-4.22.0.js'></script>
+    <script src='main.js'></script>
+</body>
 </html>
