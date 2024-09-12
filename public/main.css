@@ -1,0 +1,138 @@
+body {
+    background: #0F2027;
+    background: -webkit-linear-gradient(to right, #2C5364, #203A43, #0F2027);
+    background: linear-gradient(to right, #2C5364, #203A43, #0F2027);
+    margin: 0;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+    color: white; 
+}
+
+#join-btn {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 18px;
+    padding: 20px 40px;
+    background-color: cadetblue;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    z-index: 1000;
+}
+
+#stream-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+    margin-right: 440px;
+}
+
+#video-streams {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    width: 600px;
+    padding: 10px;
+    border: 4px solid #000;
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.video-container {
+    width: 100%;
+    max-width: 320px;
+    max-height: 180px;
+    border: 2px solid black;
+    background-color: #203A49;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    aspect-ratio: 16/9;
+    overflow: hidden;
+    border-radius: 10px;
+}
+
+.video-player {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+#stream-controls-wrapper {
+    width: 600px;
+    padding: 10px;
+    border: 4px solid #000;
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 10px;
+    position: relative;
+}
+
+#stream-controls {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+button {
+    border: none;
+    background-color: cadetblue;
+    color: #fff;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+#chat-wrapper {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    width: 600px;
+    height: calc(100vh - 20px);
+    background-color: rgba(0, 0, 0, 0.7);
+    border: 2px solid #000;
+    border-radius: 10px;
+    padding: 10px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    color: white; 
+}
+
+#chat-box {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 10px;
+    border-bottom: 2px solid #fff;
+    padding: 5px;
+    max-height: calc(100% - 50px);
+}
+
+#chat-input {
+    width: calc(100% - 80px);
+    padding: 10px;
+}
+
+#send-message {
+    width: 70px;
+    padding: 10px;
+    background-color: cadetblue;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+
+@media screen and (max-width: 768px) {
+    #video-streams,
+    #stream-controls-wrapper {
+        width: 100vw;
+    }
+}
