@@ -1,1 +1,1 @@
-https://video-chamada.vercel.app/
+https://video-chamada-r6rl.onrender.com
