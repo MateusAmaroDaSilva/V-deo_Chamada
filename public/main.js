@@ -11,7 +11,7 @@ let isJoined = false;
 let userIdCounter = 1; 
 let currentUser = ''; 
 
-const socket = io(); 
+const socket = io('https://video-chamada.vercel.app');
 
 let joinAndDisplayLocalStream = async () => {
     client.on('user-published', handleUserJoined);
