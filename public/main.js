@@ -1,5 +1,5 @@
 const APP_ID = "d291ead6adcc4b4891447c361347f199";
-const TOKEN = "007eJxTYLjTZ/6EbfONI3I9Zib199OXKTI53Qx2Yk3KV8m//v/rjTYFhhQjS8PUxBSzxJTkZJMkEwtLQxMT82RjM0NjE/M0Q0tLsS9P0hoCGRmi7iaxMDJAIIjPwpCTX5rCwAAAYV8f6g==";
+const TOKEN = "007eJxTYFie2xUhUH3setUTg1daxwt7nrs1R30pMczLaw079KThYb8CQ4qRpWFqYopZYkpyskmSiYWloYmJebKxmaGxiXmaoaVlne/ztIZARoblyR8YGRkgEMRnYcjJL01hYAAA7NYhwg==";
 const CHANNEL = "loud";
 
 const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
@@ -11,7 +11,7 @@ let isJoined = false;
 let userIdCounter = 1; 
 let currentUser = ''; 
 
-const socket = io('https://video-chamada-r6rl.onrender.com'); // URL do back-end
+const socket = io('https://video-chamada-r6rl.onrender.com');
 
 let joinAndDisplayLocalStream = async () => {
     client.on('user-published', handleUserJoined);

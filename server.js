@@ -6,24 +6,37 @@ const cors = require('cors');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
 
-// Configuração de CORS para permitir requisições da URL do front-end
+const allowedOrigins = ['https://video-chamada.vercel.app', 'http://localhost:3000'];
+
+// Configurando o CORS no Express
 app.use(cors({
-    origin: 'https://video-chamada.vercel.app' // Substitua pela URL do seu front-end
+    origin: allowedOrigins,
+    methods: ['GET', 'POST'],
+    credentials: true
 }));
 
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Configurando o Socket.io com CORS
+const io = new Server(server, {
+    cors: {
+        origin: allowedOrigins,
+        methods: ['GET', 'POST'],
+        credentials: true
+    }
+});
 
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
 });
 
+// Lógica do Socket.io
 io.on('connection', (socket) => {
     console.log('Um usuário conectou');
 
     socket.on('chat message', (msg) => {
-        io.emit('chat message', msg); // Envia a mensagem para todos os usuários conectados
+        io.emit('chat message', msg);
     });
 
     socket.on('disconnect', () => {
@@ -31,7 +44,7 @@ io.on('connection', (socket) => {
     });
 });
 
-const PORT = process.env.PORT || 3000; // Usar a porta definida pelas variáveis de ambiente
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
 });
