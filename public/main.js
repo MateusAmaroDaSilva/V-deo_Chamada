@@ -8,7 +8,7 @@ let localTracks = [];
 let remoteUsers = {};
 let screenTrack = null;
 let isJoined = false;
-let userIdCounter = 1; 
+let userIdCounter = 1; // Contador de usuários
 let currentUser = ''; 
 
 const socket = io('https://video-chamada-r6rl.onrender.com');
@@ -21,7 +21,7 @@ let joinAndDisplayLocalStream = async () => {
         const UID = await client.join(APP_ID, CHANNEL, TOKEN, null);
         localTracks = await AgoraRTC.createMicrophoneAndCameraTracks();
 
-        currentUser = `usuario0${userIdCounter}`; 
+        currentUser = `Usuario${String(userIdCounter).padStart(2, '0')}`; 
         userIdCounter++; 
 
         const player = `<div class="video-container" id="user-container-${UID}">
@@ -147,7 +147,9 @@ let sendMessage = async () => {
     const messageInput = document.getElementById('chat-input');
     const message = messageInput.value;
     if (message.trim() !== '') {
-        socket.emit('chat message', message); 
+        const userName = currentUser || 'Anônimo'; // Usa o nome do usuário ou 'Anônimo' se não estiver definido
+        const formattedMessage = `${userName}: ${message}`;
+        socket.emit('chat message', formattedMessage); 
         messageInput.value = ''; 
     }
 }
