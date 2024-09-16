@@ -1,5 +1,5 @@
 const APP_ID = "d291ead6adcc4b4891447c361347f199";
-const TOKEN = "007eJxTYFie2xUhUH3setUTg1daxwt7nrs1R30pMczLaw079KThYb8CQ4qRpWFqYopZYkpyskmSiYWloYmJebKxmaGxiXmaoaVlne/ztIZARoblyR8YGRkgEMRnYcjJL01hYAAA7NYhwg==";
+const TOKEN = "007eJxTYCj7dXHV27u/1okZVMkeX2Cqmy6TvEx944ySOMvWZwzhi44qMKQYWRqmJqaYJaYkJ5skmVhYGpqYmCcbmxkam5inGVpabi9+kdYQyMigse4mCyMDBIL4LAw5+aUpDAwAqgEgmQ==";
 const CHANNEL = "loud";
 
 const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
@@ -8,11 +8,10 @@ let localTracks = [];
 let remoteUsers = {};
 let screenTrack = null;
 let isJoined = false;
-let currentUser = '';  // Nome do usuário atribuído pelo servidor
+let currentUser = '';  
 
 const socket = io('https://video-chamada-r6rl.onrender.com');
 
-// Receber o nome do usuário atribuído pelo servidor
 socket.on('user name', (name) => {
     currentUser = name;
     console.log(`Seu nome é ${currentUser}`);
