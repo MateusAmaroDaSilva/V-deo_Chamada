@@ -8,10 +8,15 @@ let localTracks = [];
 let remoteUsers = {};
 let screenTrack = null;
 let isJoined = false;
-let userIdCounter = 1; // Contador de usuários
-let currentUser = ''; 
+let currentUser = '';  // Nome do usuário atribuído pelo servidor
 
 const socket = io('https://video-chamada-r6rl.onrender.com');
+
+// Receber o nome do usuário atribuído pelo servidor
+socket.on('user name', (name) => {
+    currentUser = name;
+    console.log(`Seu nome é ${currentUser}`);
+});
 
 let joinAndDisplayLocalStream = async () => {
     client.on('user-published', handleUserJoined);
@@ -20,9 +25,6 @@ let joinAndDisplayLocalStream = async () => {
     try {
         const UID = await client.join(APP_ID, CHANNEL, TOKEN, null);
         localTracks = await AgoraRTC.createMicrophoneAndCameraTracks();
-
-        currentUser = `Usuario${String(userIdCounter).padStart(2, '0')}`; 
-        userIdCounter++; 
 
         const player = `<div class="video-container" id="user-container-${UID}">
                             <div class="video-player" id="user-${UID}"></div>
@@ -52,7 +54,7 @@ let handleUserJoined = async (user, mediaType) => {
     if (mediaType === 'video') {
         let player = document.getElementById(`user-container-${user.uid}`);
         if (player) {
-            player.remove(); 
+            player.remove();
         }
 
         player = `<div class="video-container" id="user-container-${user.uid}">
@@ -147,7 +149,7 @@ let sendMessage = async () => {
     const messageInput = document.getElementById('chat-input');
     const message = messageInput.value;
     if (message.trim() !== '') {
-        const userName = currentUser || 'Anônimo'; // Usa o nome do usuário ou 'Anônimo' se não estiver definido
+        const userName = currentUser || 'Anônimo';
         const formattedMessage = `${userName}: ${message}`;
         socket.emit('chat message', formattedMessage); 
         messageInput.value = ''; 
@@ -156,7 +158,7 @@ let sendMessage = async () => {
 
 socket.on('chat message', (msg) => {
     const chatBox = document.getElementById('chat-box');
-    chatBox.innerHTML += `<div>${msg}</div>`; 
+    chatBox.innerHTML += `<div>${msg}</div>`;
     chatBox.scrollTop = chatBox.scrollHeight; 
 });
 

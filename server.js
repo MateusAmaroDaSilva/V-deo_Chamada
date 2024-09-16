@@ -31,16 +31,27 @@ app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
 });
 
+let userCount = 1; // Contador de usuários para nomeação incremental
+
 // Lógica do Socket.io
 io.on('connection', (socket) => {
-    console.log('Um usuário conectou');
+    // Atribui o nome ao usuário conforme o contador
+    const userName = `Usuario${String(userCount).padStart(2, '0')}`;
+    userCount++;
 
+    console.log(`${userName} entrou.`);
+
+    // Envia o nome de usuário para o cliente
+    socket.emit('user name', userName);
+
+    // Receber mensagens do cliente e retransmitir
     socket.on('chat message', (msg) => {
         io.emit('chat message', msg);
     });
 
+    // Log quando o usuário se desconectar
     socket.on('disconnect', () => {
-        console.log('Um usuário desconectou');
+        console.log(`${userName} saiu.`);
     });
 });
 
