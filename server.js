@@ -4,7 +4,7 @@ const { Server } = require('socket.io');
 const path = require('path');
 const cors = require('cors');
 const fs = require('fs');
-const fetch = require('node-fetch'); // Adicione isto para enviar o áudio para uma API de transcrição
+const fetch = require('node-fetch'); // Para enviar o áudio para uma API de transcrição
 
 const app = express();
 const server = http.createServer(app);
@@ -18,7 +18,7 @@ app.use(cors({
 }));
 
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json({ limit: '50mb' })); // Adicione isto para lidar com grandes cargas úteis de áudio
+app.use(express.json({ limit: '50mb' })); // Para lidar com grandes cargas úteis de áudio
 
 const io = new Server(server, {
     cors: {
@@ -48,16 +48,13 @@ app.get('/api/summary', (req, res) => {
 
 // API endpoint to transcribe audio
 app.post('/transcribe', async (req, res) => {
-    const { audioStreamURL } = req.body;
-
     try {
-        // Fetch the audio file from the URL
-        const response = await fetch(audioStreamURL);
-        const audioBuffer = await response.buffer();
-
         // Aqui você pode usar a API de transcrição de sua escolha. Exemplo com Google Cloud:
         const apiKey = 'YOUR_GOOGLE_CLOUD_API_KEY'; // Substitua com sua chave API
         const googleApiUrl = `https://speech.googleapis.com/v1/speech:recognize?key=${apiKey}`;
+
+        // Extraia o áudio do corpo da solicitação
+        const { audioContent } = req.body;
 
         const transcriptionResponse = await fetch(googleApiUrl, {
             method: 'POST',
@@ -71,13 +68,15 @@ app.post('/transcribe', async (req, res) => {
                     languageCode: 'en-US'
                 },
                 audio: {
-                    content: audioBuffer.toString('base64')
+                    content: audioContent
                 }
             })
         });
 
         const transcriptionData = await transcriptionResponse.json();
-        const transcript = transcriptionData.results.map(result => result.alternatives[0].transcript).join('\n');
+        const transcript = transcriptionData.results
+            .map(result => result.alternatives[0].transcript)
+            .join('\n');
 
         res.json({ text: transcript });
     } catch (error) {
