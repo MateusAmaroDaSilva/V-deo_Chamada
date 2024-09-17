@@ -25,6 +25,14 @@
         <input type="text" id="chat-input" placeholder="Digite uma mensagem..." />
         <button id="send-message">Enviar</button>
     </div>
+
+    <div id="summary-wrapper" style="display: none;">
+        <h1>Resumo da Reunião</h1>
+        <div id="summary-content">
+            <p>Carregando resumo...</p>
+        </div>
+        <button id="back-to-meeting">Voltar para a reunião</button>
+    </div>
     
     <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
     <script src='AgoraRTC_N-4.22.0.js'></script>

@@ -1,5 +1,5 @@
 const APP_ID = "d291ead6adcc4b4891447c361347f199";
-const TOKEN = "007eJxTYCj7dXHV27u/1okZVMkeX2Cqmy6TvEx944ySOMvWZwzhi44qMKQYWRqmJqaYJaYkJ5skmVhYGpqYmCcbmxkam5inGVpabi9+kdYQyMigse4mCyMDBIL4LAw5+aUpDAwAqgEgmQ==";
+const TOKEN = "007eJxTYBA+XDLTjsXs1FYZIeXWrOsnQ2e0fXr40uFQwyHVyQcyf/9SYEgxsjRMTUwxS0xJTjZJMrGwNDQxMU82NjM0NjFPM7S0XMz4Kq0hkJHh5NxVzIwMEAjiszDk5JemMDAAAKqXIUU=";
 const CHANNEL = "loud";
 
 const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
@@ -72,6 +72,17 @@ let handleUserJoined = async (user, mediaType) => {
 let handleUserLeft = async (user) => {
     delete remoteUsers[user.uid];
     document.getElementById(`user-container-${user.uid}`).remove();
+
+    // Verifica se não há mais usuários na chamada
+    if (Object.keys(remoteUsers).length === 0) {
+        // Redireciona para a página de resumo
+        document.getElementById('stream-wrapper').style.display = 'none';
+        document.getElementById('chat-wrapper').style.display = 'none';
+        document.getElementById('summary-wrapper').style.display = 'flex';
+
+        // Carrega o resumo da reunião
+        loadSummary();
+    }
 }
 
 let leaveAndRemoveLocalStream = async () => {
@@ -157,15 +168,35 @@ let sendMessage = async () => {
 
 socket.on('chat message', (msg) => {
     const chatBox = document.getElementById('chat-box');
-    chatBox.innerHTML += `<div>${msg}</div>`;
-    chatBox.scrollTop = chatBox.scrollHeight; 
+    chatBox.innerHTML += `<p>${msg}</p>`;
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('join-btn').addEventListener('click', joinStream);
-    document.getElementById('leave-btn').addEventListener('click', leaveAndRemoveLocalStream);
-    document.getElementById('mic-btn').addEventListener('click', toggleMic);
-    document.getElementById('camera-btn').addEventListener('click', toggleCamera);
-    document.getElementById('share-screen-btn').addEventListener('click', toggleScreenShare);
-    document.getElementById('send-message').addEventListener('click', sendMessage);
+document.getElementById('join-btn').addEventListener('click', joinStream);
+document.getElementById('leave-btn').addEventListener('click', leaveAndRemoveLocalStream);
+document.getElementById('mic-btn').addEventListener('click', toggleMic);
+document.getElementById('camera-btn').addEventListener('click', toggleCamera);
+document.getElementById('share-screen-btn').addEventListener('click', toggleScreenShare);
+document.getElementById('send-message').addEventListener('click', sendMessage);
+
+// Função para carregar o resumo
+const loadSummary = async () => {
+    try {
+        const response = await fetch('/api/summary');
+        if (response.ok) {
+            const summary = await response.text();
+            document.getElementById('summary-content').innerHTML = `<p>${summary}</p>`;
+        } else {
+            document.getElementById('summary-content').innerHTML = '<p>Erro ao carregar o resumo.</p>';
+        }
+    } catch (error) {
+        console.error('Erro ao buscar o resumo:', error);
+        document.getElementById('summary-content').innerHTML = '<p>Erro ao carregar o resumo.</p>';
+    }
+}
+
+// Botão para voltar para a reunião (se necessário)
+document.getElementById('back-to-meeting').addEventListener('click', () => {
+    document.getElementById('summary-wrapper').style.display = 'none';
+    document.getElementById('stream-wrapper').style.display = 'flex';
+    document.getElementById('chat-wrapper').style.display = 'flex';
 });

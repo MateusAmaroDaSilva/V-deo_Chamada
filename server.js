@@ -3,6 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const cors = require('cors');
+const fs = require('fs'); // Para ler arquivos
 
 const app = express();
 const server = http.createServer(app);
@@ -29,10 +30,23 @@ app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
 });
 
+// Nova rota para fornecer o resumo da reunião
+app.get('/api/summary', (req, res) => {
+    // Aqui você pode integrar com a IA que gera o resumo
+    // Para fins de exemplo, vou ler um arquivo fictício `summary.txt`
+    fs.readFile('summary.txt', 'utf8', (err, data) => {
+        if (err) {
+            console.error('Erro ao ler o resumo:', err);
+            res.status(500).send('Erro ao gerar o resumo.');
+        } else {
+            res.send(data);
+        }
+    });
+});
+
 let userCount = 1; 
 
 io.on('connection', (socket) => {
-    
     const userName = `Usuario${String(userCount).padStart(2, '0')}`;
     userCount++;
 
