@@ -3,7 +3,8 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const cors = require('cors');
-const fs = require('fs'); // Para ler arquivos
+const fs = require('fs');
+const fetch = require('node-fetch'); // Adicione isto para enviar o áudio para uma API de transcrição
 
 const app = express();
 const server = http.createServer(app);
@@ -17,6 +18,7 @@ app.use(cors({
 }));
 
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json({ limit: '50mb' })); // Adicione isto para lidar com grandes cargas úteis de áudio
 
 const io = new Server(server, {
     cors: {
@@ -26,25 +28,65 @@ const io = new Server(server, {
     }
 });
 
+// Serve the main page
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/public/index.html');
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Nova rota para fornecer o resumo da reunião
+// API endpoint to get the meeting summary
 app.get('/api/summary', (req, res) => {
-    // Aqui você pode integrar com a IA que gera o resumo
-    // Para fins de exemplo, vou ler um arquivo fictício `summary.txt`
-    fs.readFile('summary.txt', 'utf8', (err, data) => {
+    const filePath = path.join(__dirname, 'summary.txt');
+
+    fs.readFile(filePath, 'utf8', (err, data) => {
         if (err) {
             console.error('Erro ao ler o resumo:', err);
-            res.status(500).send('Erro ao gerar o resumo.');
-        } else {
-            res.send(data);
+            return res.status(500).send('Erro ao gerar o resumo.');
         }
+        res.send(data);
     });
 });
 
-let userCount = 1; 
+// API endpoint to transcribe audio
+app.post('/transcribe', async (req, res) => {
+    const { audioStreamURL } = req.body;
+
+    try {
+        // Fetch the audio file from the URL
+        const response = await fetch(audioStreamURL);
+        const audioBuffer = await response.buffer();
+
+        // Aqui você pode usar a API de transcrição de sua escolha. Exemplo com Google Cloud:
+        const apiKey = 'YOUR_GOOGLE_CLOUD_API_KEY'; // Substitua com sua chave API
+        const googleApiUrl = `https://speech.googleapis.com/v1/speech:recognize?key=${apiKey}`;
+
+        const transcriptionResponse = await fetch(googleApiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                config: {
+                    encoding: 'LINEAR16',
+                    sampleRateHertz: 16000,
+                    languageCode: 'en-US'
+                },
+                audio: {
+                    content: audioBuffer.toString('base64')
+                }
+            })
+        });
+
+        const transcriptionData = await transcriptionResponse.json();
+        const transcript = transcriptionData.results.map(result => result.alternatives[0].transcript).join('\n');
+
+        res.json({ text: transcript });
+    } catch (error) {
+        console.error('Erro ao transcrever áudio:', error);
+        res.status(500).send('Erro ao transcrever áudio.');
+    }
+});
+
+let userCount = 1;
 
 io.on('connection', (socket) => {
     const userName = `Usuario${String(userCount).padStart(2, '0')}`;
@@ -60,6 +102,7 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         console.log(`${userName} saiu.`);
+        // Additional logic to handle meeting end can go here
     });
 });
 

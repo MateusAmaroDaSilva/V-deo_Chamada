@@ -8,7 +8,9 @@ let localTracks = [];
 let remoteUsers = {};
 let screenTrack = null;
 let isJoined = false;
-let currentUser = '';  
+let currentUser = '';
+let mediaRecorder;
+let audioChunks = [];
 
 const socket = io('https://video-chamada-r6rl.onrender.com');
 
@@ -44,6 +46,9 @@ let joinStream = async () => {
     document.getElementById('stream-wrapper').style.display = 'flex';
     document.getElementById('stream-controls-wrapper').style.display = 'flex';
     document.getElementById('chat-wrapper').style.display = 'flex'; 
+
+    // Iniciar a transcrição
+    await startTranscription();
 }
 
 let handleUserJoined = async (user, mediaType) => {
@@ -100,6 +105,11 @@ let leaveAndRemoveLocalStream = async () => {
     document.getElementById('stream-controls-wrapper').style.display = 'none';
     document.getElementById('chat-wrapper').style.display = 'none'; 
     document.getElementById('video-streams').innerHTML = '';
+
+    // Parar a transcrição se estiver ativa
+    if (mediaRecorder) {
+        mediaRecorder.stop();
+    }
 }
 
 let toggleMic = async (e) => {
@@ -170,6 +180,42 @@ socket.on('chat message', (msg) => {
     const chatBox = document.getElementById('chat-box');
     chatBox.innerHTML += `<p>${msg}</p>`;
 });
+
+// Função para capturar e transcrever áudio
+async function startTranscription() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+
+        mediaRecorder.ondataavailable = (event) => {
+            audioChunks.push(event.data);
+        };
+
+        mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+            const audioStreamURL = URL.createObjectURL(audioBlob);
+
+            try {
+                const response = await fetch('/transcribe', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ audioStreamURL: audioStreamURL }),
+                });
+                const data = await response.json();
+                console.log('Transcrição recebida:', data.text);
+                // Aqui você pode exibir a transcrição em outra tela
+            } catch (error) {
+                console.error('Erro ao enviar o áudio:', error);
+            }
+        };
+
+        mediaRecorder.start();
+    } catch (error) {
+        console.error('Erro ao acessar o microfone:', error);
+    }
+}
 
 document.getElementById('join-btn').addEventListener('click', joinStream);
 document.getElementById('leave-btn').addEventListener('click', leaveAndRemoveLocalStream);
