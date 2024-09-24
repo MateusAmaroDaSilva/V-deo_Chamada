@@ -1,6 +1,6 @@
 const APP_ID = "d291ead6adcc4b4891447c361347f199";
-const TOKEN = "007eJxTYFD/YXfkvvL6ue+uRt/b+25p4XSfk0s8/CzmtsWJtF2rmmCowJBiZGmYmphilpiSnGySZGJhaWhiYp5sbGZobGKeZmhpyb3mbVpDICNDsL89AyMUgvgsDDn5pSkMDADvECCc";
-const CHANNEL = "loud";
+const TOKEN = "007eJxTYGCN8ClTVAj/8eFKjfKWWJtYreX2tVrvjEynF968bf7zwjsFhhQjS8PUxBSzxJTkZJMkEwtLQxMT82RjM0NjE/M0Q0tL348f0xoCGRlOqFcxMEIhiM/KUJaZkprPwAAAUfYgDw==";
+const CHANNEL = "video";
 
 const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
 
@@ -12,14 +12,21 @@ let currentUser = '';
 let mediaRecorder;
 let audioChunks = [];
 
-const socket = io('https://video-chamada-r6rl.onrender.com');
+// Variáveis para limitar requisições de transcrição
+let lastTranscriptionTime = 0;
+const transcriptionInterval = 10000; // 10 segundos entre requisições
+
+const socket = io('http://localhost:3000'); // Alterar para o URL do seu servidor
 
 socket.on('user name', (name) => {
     currentUser = name;
     console.log(`Seu nome é ${currentUser}`);
 });
 
+let transcriptionContent = document.getElementById('transcription-content');
+
 let joinAndDisplayLocalStream = async () => {
+    console.log("Tentando iniciar o stream local...");
     client.on('user-published', handleUserJoined);
     client.on('user-left', handleUserLeft);
 
@@ -33,50 +40,52 @@ let joinAndDisplayLocalStream = async () => {
         document.getElementById('video-streams').insertAdjacentHTML('beforeend', player);
         localTracks[1].play(`user-${UID}`);
         await client.publish([localTracks[0], localTracks[1]]);
+
+        // Iniciar a transcrição
+        await startTranscription();
     } catch (error) {
         console.error('Erro ao iniciar o stream local: ', error);
     }
-}
+};
 
 let joinStream = async () => {
-    if (isJoined) return; 
+    if (isJoined) return;
     isJoined = true;
     await joinAndDisplayLocalStream();
     document.getElementById('join-btn').style.display = 'none';
     document.getElementById('stream-wrapper').style.display = 'flex';
     document.getElementById('stream-controls-wrapper').style.display = 'flex';
-    document.getElementById('chat-wrapper').style.display = 'flex'; 
-
-    // Iniciar a transcrição
-    await startTranscription();
-}
+    document.getElementById('chat-wrapper').style.display = 'flex';
+};
 
 let handleUserJoined = async (user, mediaType) => {
     remoteUsers[user.uid] = user;
     await client.subscribe(user, mediaType);
 
     if (mediaType === 'video') {
-        let player = document.getElementById(`user-container-${user.uid}`);
+        const player = document.getElementById(`user-container-${user.uid}`);
         if (player) {
             player.remove();
         }
 
-        player = `<div class="video-container" id="user-container-${user.uid}">
-                      <div class="video-player" id="user-${user.uid}"></div>
-                 </div>`;
-        document.getElementById('video-streams').insertAdjacentHTML('beforeend', player);
-
+        const newPlayer = `<div class="video-container" id="user-container-${user.uid}">
+                              <div class="video-player" id="user-${user.uid}"></div>
+                         </div>`;
+        document.getElementById('video-streams').insertAdjacentHTML('beforeend', newPlayer);
         user.videoTrack.play(`user-${user.uid}`);
     }
 
     if (mediaType === 'audio') {
         user.audioTrack.play();
     }
-}
+};
 
 let handleUserLeft = async (user) => {
     delete remoteUsers[user.uid];
-    document.getElementById(`user-container-${user.uid}`).remove();
+    const player = document.getElementById(`user-container-${user.uid}`);
+    if (player) {
+        player.remove();
+    }
 
     // Verifica se não há mais usuários na chamada
     if (Object.keys(remoteUsers).length === 0) {
@@ -88,30 +97,31 @@ let handleUserLeft = async (user) => {
         // Carrega o resumo da reunião
         loadSummary();
     }
-}
+};
 
 let leaveAndRemoveLocalStream = async () => {
-    if (!isJoined) return; 
+    if (!isJoined) return;
     isJoined = false;
 
-    for (let i = 0; i < localTracks.length; i++) {
-        localTracks[i].stop();
-        localTracks[i].close();
+    for (let track of localTracks) {
+        track.stop();
+        track.close();
     }
 
     await client.leave();
     document.getElementById('join-btn').style.display = 'block';
     document.getElementById('stream-wrapper').style.display = 'none';
     document.getElementById('stream-controls-wrapper').style.display = 'none';
-    document.getElementById('chat-wrapper').style.display = 'none'; 
+    document.getElementById('chat-wrapper').style.display = 'none';
     document.getElementById('video-streams').innerHTML = '';
 
     // Parar a transcrição se estiver ativa
     if (mediaRecorder) {
         mediaRecorder.stop();
     }
-}
+};
 
+// Funções de controle de áudio e vídeo
 let toggleMic = async (e) => {
     if (localTracks[0].muted) {
         await localTracks[0].setMuted(false);
@@ -122,7 +132,7 @@ let toggleMic = async (e) => {
         e.target.innerText = 'Mic Off';
         e.target.style.backgroundColor = '#EE4B2B';
     }
-}
+};
 
 let toggleCamera = async (e) => {
     if (localTracks[1].muted) {
@@ -134,7 +144,7 @@ let toggleCamera = async (e) => {
         e.target.innerText = 'Camera Off';
         e.target.style.backgroundColor = '#EE4B2B';
     }
-}
+};
 
 let toggleScreenShare = async (e) => {
     if (!screenTrack) {
@@ -163,26 +173,35 @@ let toggleScreenShare = async (e) => {
             console.error('Erro ao parar o compartilhamento de tela: ', error);
         }
     }
-}
+};
 
 let sendMessage = async () => {
     const messageInput = document.getElementById('chat-input');
-    const message = messageInput.value;
-    if (message.trim() !== '') {
+    const message = messageInput.value.trim();
+    if (message !== '') {
         const userName = currentUser || 'Anônimo';
         const formattedMessage = `${userName}: ${message}`;
-        socket.emit('chat message', formattedMessage); 
-        messageInput.value = ''; 
+        socket.emit('chat message', formattedMessage);
+        messageInput.value = '';
     }
-}
+};
 
 socket.on('chat message', (msg) => {
     const chatBox = document.getElementById('chat-box');
     chatBox.innerHTML += `<p>${msg}</p>`;
+    chatBox.scrollTop = chatBox.scrollHeight; // Rolagem automática
 });
 
-// Função para capturar e transcrever áudio
+// Função para iniciar a transcrição com intervalo
 async function startTranscription() {
+    const currentTime = Date.now();
+    if (currentTime - lastTranscriptionTime < transcriptionInterval) {
+        console.warn('Tentando enviar requisições muito rápido, espere um pouco...');
+        return;
+    }
+
+    lastTranscriptionTime = currentTime;
+
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         mediaRecorder = new MediaRecorder(stream);
@@ -192,28 +211,61 @@ async function startTranscription() {
         };
 
         mediaRecorder.onstop = async () => {
-            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-            const audioStreamURL = URL.createObjectURL(audioBlob);
+            const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'audio.mp3');
 
             try {
-                const response = await fetch('/transcribe', {
+                const response = await fetchWithRetry('http://localhost:3000/transcribe', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ audioStreamURL: audioStreamURL }),
+                    body: formData
                 });
-                const data = await response.json();
-                console.log('Transcrição recebida:', data.text);
-                // Aqui você pode exibir a transcrição em outra tela
+
+                if (response.ok) {
+                    const transcription = await response.json();
+                    updateTranscription(transcription.text);
+                } else if (response.status === 429) {
+                    console.error('Erro: Muitas requisições enviadas.');
+                    alert('Você está enviando muitas requisições. Tente novamente mais tarde.');
+                } else {
+                    console.error('Erro ao transcrever o áudio: ', response.status);
+                }
             } catch (error) {
-                console.error('Erro ao enviar o áudio:', error);
+                console.error('Erro ao processar a transcrição: ', error);
             }
         };
 
         mediaRecorder.start();
+        console.log("Gravação de áudio iniciada.");
     } catch (error) {
-        console.error('Erro ao acessar o microfone:', error);
+        console.error('Erro ao iniciar a transcrição: ', error);
+    }
+}
+
+// Função para atualizar a transcrição na interface
+function updateTranscription(text) {
+    transcriptionContent.innerText += text + '\n'; // Adiciona a nova transcrição ao conteúdo existente
+}
+
+// Função para carregar o resumo da reunião
+async function loadSummary() {
+    const summaryContent = document.getElementById('summary-content');
+    summaryContent.innerHTML = '<p>Resumo da reunião: ...</p>';
+}
+
+// Função auxiliar para requisições com retry
+async function fetchWithRetry(url, options, retries = 3) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const response = await fetch(url, options);
+            if (response.ok) {
+                return response;
+            }
+            if (i === retries - 1) throw new Error('Max retries reached');
+        } catch (error) {
+            console.error('Erro na requisição: ', error);
+            if (i === retries - 1) throw error;
+        }
     }
 }
 
@@ -221,28 +273,8 @@ document.getElementById('join-btn').addEventListener('click', joinStream);
 document.getElementById('leave-btn').addEventListener('click', leaveAndRemoveLocalStream);
 document.getElementById('mic-btn').addEventListener('click', toggleMic);
 document.getElementById('camera-btn').addEventListener('click', toggleCamera);
-document.getElementById('share-screen-btn').addEventListener('click', toggleScreenShare);
-document.getElementById('send-message').addEventListener('click', sendMessage);
-
-// Função para carregar o resumo
-const loadSummary = async () => {
-    try {
-        const response = await fetch('/api/summary');
-        if (response.ok) {
-            const summary = await response.text();
-            document.getElementById('summary-content').innerHTML = `<p>${summary}</p>`;
-        } else {
-            document.getElementById('summary-content').innerHTML = '<p>Erro ao carregar o resumo.</p>';
-        }
-    } catch (error) {
-        console.error('Erro ao buscar o resumo:', error);
-        document.getElementById('summary-content').innerHTML = '<p>Erro ao carregar o resumo.</p>';
-    }
-}
-
-// Botão para voltar para a reunião (se necessário)
-document.getElementById('back-to-meeting').addEventListener('click', () => {
-    document.getElementById('summary-wrapper').style.display = 'none';
-    document.getElementById('stream-wrapper').style.display = 'flex';
-    document.getElementById('chat-wrapper').style.display = 'flex';
+document.getElementById('screen-btn').addEventListener('click', toggleScreenShare);
+document.getElementById('send-btn').addEventListener('click', sendMessage);
+document.getElementById('chat-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendMessage();
 });

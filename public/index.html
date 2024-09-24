@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -33,9 +33,25 @@
         </div>
         <button id="back-to-meeting">Voltar para a reunião</button>
     </div>
-    
+
+    <div id="transcription-wrapper" style="display: none;">
+        <h2>Transcrição</h2>
+        <div id="transcription-content">
+            <p>Carregando transcrição...</p>
+        </div>
+    </div>
+
     <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
     <script src='AgoraRTC_N-4.22.0.js'></script>
     <script src='main.js'></script>
+
+    <script>
+        document.getElementById('join-btn').addEventListener('click', () => {
+            // Aqui você pode adicionar a lógica para iniciar a reunião
+            console.log("Reunião iniciada.");
+            document.getElementById('stream-wrapper').style.display = 'flex'; // Exibir streams de vídeo
+            document.getElementById('join-btn').style.display = 'none'; // Ocultar botão "Começar"
+        });
+    </script>
 </body>
 </html>

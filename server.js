@@ -1,111 +1,79 @@
 const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-const path = require('path');
-const cors = require('cors');
+const multer = require('multer');
+const { spawn } = require('child_process');
 const fs = require('fs');
-const fetch = require('node-fetch'); // Para enviar o áudio para uma API de transcrição
+const path = require('path');
 
 const app = express();
-const server = http.createServer(app);
+const upload = multer({ dest: 'audio/' });
 
-const allowedOrigins = ['https://video-chamada.vercel.app', 'http://localhost:3000'];
+app.use(express.static('public')); // Serve arquivos estáticos da pasta 'public'
 
-app.use(cors({
-    origin: allowedOrigins,
-    methods: ['GET', 'POST'],
-    credentials: true
-}));
-
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json({ limit: '50mb' })); // Para lidar com grandes cargas úteis de áudio
-
-const io = new Server(server, {
-    cors: {
-        origin: allowedOrigins,
-        methods: ['GET', 'POST'],
-        credentials: true
-    }
-});
-
-// Serve the main page
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// API endpoint to get the meeting summary
-app.get('/api/summary', (req, res) => {
-    const filePath = path.join(__dirname, 'summary.txt');
-
-    fs.readFile(filePath, 'utf8', (err, data) => {
-        if (err) {
-            console.error('Erro ao ler o resumo:', err);
-            return res.status(500).send('Erro ao gerar o resumo.');
-        }
-        res.send(data);
-    });
-});
-
-// API endpoint to transcribe audio
-app.post('/transcribe', async (req, res) => {
+// Endpoint para transcrição de áudio
+app.post('/transcribe', upload.single('audio'), async (req, res) => {
     try {
-        // Aqui você pode usar a API de transcrição de sua escolha. Exemplo com Google Cloud:
-        const apiKey = 'YOUR_GOOGLE_CLOUD_API_KEY'; // Substitua com sua chave API
-        const googleApiUrl = `https://speech.googleapis.com/v1/speech:recognize?key=${apiKey}`;
+        if (!req.file) {
+            return res.status(400).json({ error: 'Nenhum arquivo enviado.' });
+        }
 
-        // Extraia o áudio do corpo da solicitação
-        const { audioContent } = req.body;
+        const audioPath = req.file.path;
+        const newAudioPath = `audio/${req.file.filename}${path.extname(req.file.originalname)}`;
 
-        const transcriptionResponse = await fetch(googleApiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                config: {
-                    encoding: 'LINEAR16',
-                    sampleRateHertz: 16000,
-                    languageCode: 'en-US'
-                },
-                audio: {
-                    content: audioContent
+        // Renomeia o arquivo de áudio para garantir a extensão correta
+        fs.rename(audioPath, newAudioPath, (err) => {
+            if (err) {
+                console.error(`Erro ao renomear arquivo: ${err}`);
+                return res.status(500).json({ error: 'Erro ao processar o arquivo de áudio.' });
+            }
+
+            console.log(`Novo arquivo adicionado: ${newAudioPath}`);
+
+            let transcriptionResult = '';
+
+            // Chama o script Python para transcrição
+            const pythonProcess = spawn('python', ['transcricao.py', newAudioPath]);
+
+            pythonProcess.stdout.on('data', (data) => {
+                console.log(`Transcrição: ${data.toString('utf-8')}`); // Garanta que a saída seja convertida para UTF-8
+                transcriptionResult += data.toString('utf-8'); // Armazena os dados recebidos em UTF-8
+            });
+
+            pythonProcess.stderr.on('data', (data) => {
+                console.error(`Erro: ${data}`);
+                // Não envie a resposta aqui para evitar múltiplos envios
+            });
+
+            pythonProcess.on('close', (code) => {
+                console.log(`Processo finalizado com código ${code}`);
+                if (code === 0) {
+                    // Salvar a transcrição em UTF-8
+                    fs.writeFile('transcricao.txt', transcriptionResult, { encoding: 'utf-8' }, (err) => {
+                        if (err) {
+                            console.error('Erro ao salvar a transcrição:', err);
+                            return res.status(500).json({ error: 'Erro ao salvar a transcrição' });
+                        }
+                        res.json({ text: transcriptionResult }); // Envia a transcrição como resposta apenas uma vez
+                    });
+                } else {
+                    res.status(500).json({ error: 'Erro na transcrição.' });
                 }
-            })
+
+                // Apaga o arquivo após a transcrição
+                fs.unlink(newAudioPath, (err) => {
+                    if (err) console.error(`Erro ao deletar o arquivo: ${err}`);
+                    else console.log(`Arquivo de áudio deletado: ${newAudioPath}`);
+                });
+            });
         });
 
-        const transcriptionData = await transcriptionResponse.json();
-        const transcript = transcriptionData.results
-            .map(result => result.alternatives[0].transcript)
-            .join('\n');
-
-        res.json({ text: transcript });
     } catch (error) {
-        console.error('Erro ao transcrever áudio:', error);
-        res.status(500).send('Erro ao transcrever áudio.');
+        console.error('Erro ao processar a transcrição:', error);
+        res.status(500).json({ error: 'Erro ao processar a transcrição.' });
     }
 });
 
-let userCount = 1;
-
-io.on('connection', (socket) => {
-    const userName = `Usuario${String(userCount).padStart(2, '0')}`;
-    userCount++;
-
-    console.log(`${userName} entrou.`);
-
-    socket.emit('user name', userName);
-
-    socket.on('chat message', (msg) => {
-        io.emit('chat message', msg);
-    });
-
-    socket.on('disconnect', () => {
-        console.log(`${userName} saiu.`);
-        // Additional logic to handle meeting end can go here
-    });
-});
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+// Roda o servidor na porta 3000
+const PORT = 3000;
+app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
 });
