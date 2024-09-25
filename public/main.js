@@ -1,5 +1,5 @@
 const APP_ID = "d291ead6adcc4b4891447c361347f199";
-const TOKEN = "007eJxTYGCN8ClTVAj/8eFKjfKWWJtYreX2tVrvjEynF968bf7zwjsFhhQjS8PUxBSzxJTkZJMkEwtLQxMT82RjM0NjE/M0Q0tL348f0xoCGRlOqFcxMEIhiM/KUJaZkprPwAAAUfYgDw==";
+const TOKEN = "007eJxTYHjR+Ml51gPD5DNhFdckdm5I2JmZ0Pwj8YiCflVj5cO4hF4FhhQjS8PUxBSzxJTkZJMkEwtLQxMT82RjM0NjE/M0Q0vLZ+1f0hoCGRk4v4QxMTJAIIjPylCWmZKaz8AAAAuAIck=";
 const CHANNEL = "video";
 
 const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
@@ -12,11 +12,11 @@ let currentUser = '';
 let mediaRecorder;
 let audioChunks = [];
 
-// Variáveis para limitar requisições de transcrição
-let lastTranscriptionTime = 0;
-const transcriptionInterval = 10000; // 10 segundos entre requisições
 
-const socket = io('http://localhost:3000'); // Alterar para o URL do seu servidor
+let lastTranscriptionTime = 0;
+const transcriptionInterval = 10000; 
+
+const socket = io('http://localhost:3000'); 
 
 socket.on('user name', (name) => {
     currentUser = name;
@@ -41,7 +41,6 @@ let joinAndDisplayLocalStream = async () => {
         localTracks[1].play(`user-${UID}`);
         await client.publish([localTracks[0], localTracks[1]]);
 
-        // Iniciar a transcrição
         await startTranscription();
     } catch (error) {
         console.error('Erro ao iniciar o stream local: ', error);
@@ -87,14 +86,12 @@ let handleUserLeft = async (user) => {
         player.remove();
     }
 
-    // Verifica se não há mais usuários na chamada
     if (Object.keys(remoteUsers).length === 0) {
-        // Redireciona para a página de resumo
+        
         document.getElementById('stream-wrapper').style.display = 'none';
         document.getElementById('chat-wrapper').style.display = 'none';
         document.getElementById('summary-wrapper').style.display = 'flex';
 
-        // Carrega o resumo da reunião
         loadSummary();
     }
 };
@@ -115,13 +112,11 @@ let leaveAndRemoveLocalStream = async () => {
     document.getElementById('chat-wrapper').style.display = 'none';
     document.getElementById('video-streams').innerHTML = '';
 
-    // Parar a transcrição se estiver ativa
     if (mediaRecorder) {
         mediaRecorder.stop();
     }
 };
 
-// Funções de controle de áudio e vídeo
 let toggleMic = async (e) => {
     if (localTracks[0].muted) {
         await localTracks[0].setMuted(false);
@@ -189,10 +184,9 @@ let sendMessage = async () => {
 socket.on('chat message', (msg) => {
     const chatBox = document.getElementById('chat-box');
     chatBox.innerHTML += `<p>${msg}</p>`;
-    chatBox.scrollTop = chatBox.scrollHeight; // Rolagem automática
+    chatBox.scrollTop = chatBox.scrollHeight; 
 });
 
-// Função para iniciar a transcrição com intervalo
 async function startTranscription() {
     const currentTime = Date.now();
     if (currentTime - lastTranscriptionTime < transcriptionInterval) {
@@ -242,18 +236,15 @@ async function startTranscription() {
     }
 }
 
-// Função para atualizar a transcrição na interface
 function updateTranscription(text) {
-    transcriptionContent.innerText += text + '\n'; // Adiciona a nova transcrição ao conteúdo existente
+    transcriptionContent.innerText += text + '\n'; 
 }
 
-// Função para carregar o resumo da reunião
 async function loadSummary() {
     const summaryContent = document.getElementById('summary-content');
     summaryContent.innerHTML = '<p>Resumo da reunião: ...</p>';
 }
 
-// Função auxiliar para requisições com retry
 async function fetchWithRetry(url, options, retries = 3) {
     for (let i = 0; i < retries; i++) {
         try {

@@ -41,16 +41,17 @@
         </div>
     </div>
 
+    <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
     <script src='AgoraRTC_N-4.22.0.js'></script>
     <script src='main.js'></script>
 
     <script>
         document.getElementById('join-btn').addEventListener('click', () => {
-            // Aqui você pode adicionar a lógica para iniciar a reunião
+            
             console.log("Reunião iniciada.");
-            document.getElementById('stream-wrapper').style.display = 'flex'; // Exibir streams de vídeo
-            document.getElementById('join-btn').style.display = 'none'; // Ocultar botão "Começar"
+            document.getElementById('stream-wrapper').style.display = 'flex'; 
+            document.getElementById('join-btn').style.display = 'none'; 
         });
     </script>
 </body>
