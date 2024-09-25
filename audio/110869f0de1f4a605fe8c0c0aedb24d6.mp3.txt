@@ -1,1 +1,0 @@
- Bom, nossa primeira entrega foi focada principalmente na parte de transcrição do áudio, que a gente quer pegar o áudio e conseguir escrever e depois a gente quer mandar para um sistema para fazer essa busca, tudo, fazer o tratamento e puxar para a gente um resuminho que o nosso usuário vai ter total acesso.

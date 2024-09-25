@@ -1,0 +1,1 @@
+ Esta é a testa da nossa função gravando o áudio, testando, testando, gravação, testando.
