@@ -1,5 +1,5 @@
 const APP_ID = "d291ead6adcc4b4891447c361347f199";
-const TOKEN = "007eJxTYHjR+Ml51gPD5DNhFdckdm5I2JmZ0Pwj8YiCflVj5cO4hF4FhhQjS8PUxBSzxJTkZJMkEwtLQxMT82RjM0NjE/M0Q0vLZ+1f0hoCGRk4v4QxMTJAIIjPylCWmZKaz8AAAAuAIck=";
+const TOKEN = "007eJxTYBA5seB4wAw/7wc1G6dFzJOJK88MuhnzS91ssrDqSeZZDxgUGFKMLA1TE1PMElOSk02STCwsDU1MzJONzQyNTczTDC0tV9Q4pzcEMjJYGnYzMTJAIIjPylCWmZKaz8AAABs8Hgo=";
 const CHANNEL = "video";
 
 const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
@@ -18,12 +18,53 @@ const transcriptionInterval = 10000;
 
 const socket = io('http://localhost:3000'); 
 
+
 socket.on('user name', (name) => {
     currentUser = name;
     console.log(`Seu nome é ${currentUser}`);
 });
 
 let transcriptionContent = document.getElementById('transcription-content');
+
+function updateMeetingDate() {
+    const dateElement = document.getElementById('meeting-date');
+    
+    if (dateElement) {
+        const currentDate = new Date();
+        const formattedDate = currentDate.toLocaleDateString('pt-BR', {
+            day: '2-digit', month: '2-digit', year: 'numeric'
+        });
+
+        dateElement.textContent = `Reunião Talklog (${formattedDate})`;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    updateMeetingDate();
+});
+
+function endMeeting() {
+    stopTimer();
+    console.log("Reunião finalizada. O tempo total foi: " + document.getElementById('timerDisplay').textContent);
+}
+
+let startTime = Date.now();
+let timerInterval;
+
+function updateTimer() {
+    let elapsedTime = Date.now() - startTime; 
+    let seconds = Math.floor(elapsedTime / 1000) % 60;
+    let minutes = Math.floor(elapsedTime / 60000) % 60;
+    let hours = Math.floor(elapsedTime / 3600000); 
+
+    seconds = seconds < 10 ? '0' + seconds : seconds;
+    minutes = minutes < 10 ? '0' + minutes : minutes;
+    hours = hours < 10 ? '0' + hours : hours;
+
+    document.getElementById('meeting-timer').textContent = `${hours}:${minutes}:${seconds}`;
+}
+
+timerInterval = setInterval(updateTimer, 1000); 
 
 let joinAndDisplayLocalStream = async () => {
     console.log("Tentando iniciar o stream local...");
@@ -47,6 +88,7 @@ let joinAndDisplayLocalStream = async () => {
     }
 };
 
+
 let joinStream = async () => {
     if (isJoined) return;
     isJoined = true;
@@ -56,6 +98,7 @@ let joinStream = async () => {
     document.getElementById('stream-controls-wrapper').style.display = 'flex';
     document.getElementById('chat-wrapper').style.display = 'flex';
 };
+
 
 let handleUserJoined = async (user, mediaType) => {
     remoteUsers[user.uid] = user;
@@ -112,32 +155,60 @@ let leaveAndRemoveLocalStream = async () => {
     document.getElementById('chat-wrapper').style.display = 'none';
     document.getElementById('video-streams').innerHTML = '';
 
+    function handleChatKey(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            sendMessage();
+        }
+    }
+    
+    function sendMessage() {
+        const chatInput = document.getElementById('chat-input');
+        const message = chatInput.value.trim();
+        if (message) {
+            socket.emit('chat message', message);
+            chatInput.value = '';
+        }
+    }
+    
+    socket.on('chat message', (msg) => {
+        const chatBox = document.getElementById('chat-box');
+        const msgElement = document.createElement('p');
+        msgElement.textContent = msg;
+        chatBox.appendChild(msgElement);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
     if (mediaRecorder) {
         mediaRecorder.stop();
     }
 };
 
 let toggleMic = async (e) => {
+    const micButton = document.getElementById("mic-btn");
+
     if (localTracks[0].muted) {
         await localTracks[0].setMuted(false);
-        e.target.innerText = 'Mic On';
-        e.target.style.backgroundColor = 'cadetblue';
+        micButton.innerHTML = '<ion-icon name="mic-outline"></ion-icon>'; 
+        micButton.style.backgroundColor = '#333';
     } else {
         await localTracks[0].setMuted(true);
-        e.target.innerText = 'Mic Off';
-        e.target.style.backgroundColor = '#EE4B2B';
+        micButton.innerHTML = '<ion-icon name="mic-off-outline"></ion-icon>'; 
+        micButton.style.backgroundColor = '#333';
     }
 };
 
 let toggleCamera = async (e) => {
+    const cameraButton = document.getElementById("camera-btn");
+
     if (localTracks[1].muted) {
         await localTracks[1].setMuted(false);
-        e.target.innerText = 'Camera On';
-        e.target.style.backgroundColor = 'cadetblue';
+        cameraButton.innerHTML = '<ion-icon name="videocam-outline"></ion-icon>'; 
+        cameraButton.style.backgroundColor = '#333';
     } else {
         await localTracks[1].setMuted(true);
-        e.target.innerText = 'Camera Off';
-        e.target.style.backgroundColor = '#EE4B2B';
+        cameraButton.innerHTML = '<ion-icon name="videocam-off-outline"></ion-icon>'; 
+        cameraButton.style.backgroundColor = '#333';
     }
 };
 
@@ -269,3 +340,4 @@ document.getElementById('send-btn').addEventListener('click', sendMessage);
 document.getElementById('chat-input').addEventListener('keypress', (e) => {
     if (e.key === 'Enter') sendMessage();
 });
+

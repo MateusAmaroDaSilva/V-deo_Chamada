@@ -1,18 +1,99 @@
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: #333;
+    color: white;
+}
+
+.meeting-screen .header {
+    display: flex;
+}
+
+.meeting-info-right {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Espaço entre ID e botão de copiar */
+}
+
+.meeting-id {
+    font-size: 1rem;
+}
+
+.copy-link {
+    background-color: #555;
+    color: white;
+    border: none;
+    padding: 5px;
+    cursor: pointer;
+}
+
+.copy-link:hover {
+    background-color: #777;
+}
+
+.meeting-info {
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+}
+
+.recording-icon {
+    color: red;
+    font-weight: bold;
+}
+
+.meeting-id {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+}
+
+.copy-link {
+    background-color: #333;
+    color: #fff;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 14px;
+    border-radius: 10px; /* Arredondando o botão */
+}
+
+.copy-link:hover {
+    background-color: #333;
+}
+
+/* Responsividade da navbar */
+@media screen and (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .meeting-info, .meeting-id {
+        font-size: 16px;
+    }
+}
+
+/* Body */
 body {
-    background: #0F2027;
-    background: -webkit-linear-gradient(to right, #2C5364, #203A43, #0F2027);
-    background: linear-gradient(to right, #2C5364, #203A43, #0F2027);
+    background-color: #444;
     margin: 0;
     font-family: Arial, sans-serif;
     overflow: hidden;
-    color: white; 
+    color: white;
 }
 
+/* Botão de entrada */
 #join-btn {
     position: fixed;
-    top: 50%;
+    bottom: 20px; /* Mover para a parte inferior */
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translateX(-50%); /* Centraliza o botão horizontalmente */
     font-size: 18px;
     padding: 20px 40px;
     background-color: cadetblue;
@@ -20,14 +101,16 @@ body {
     border: none;
     cursor: pointer;
     z-index: 1000;
+    border-radius: 25px; /* Arredondando o botão */
 }
 
+/* Área de transmissão */
 #stream-wrapper {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     justify-content: flex-start;
-    height: 100vh;
+    height: calc(100vh - 100px); /* Ajuste para não sobrepor os botões na parte inferior */
     padding: 20px;
     box-sizing: border-box;
     margin-right: 440px;
@@ -37,7 +120,7 @@ body {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
-    width: 600px;
+    width: 1000px;
     padding: 10px;
     border: 4px solid #000;
     background-color: rgba(0, 0, 0, 0.7);
@@ -66,13 +149,15 @@ body {
     object-fit: cover;
 }
 
+/* Controles da transmissão */
 #stream-controls-wrapper {
-    width: 600px;
+    background-color: transparent;
+    border: none;
     padding: 10px;
-    border: 4px solid #000;
-    background-color: rgba(0, 0, 0, 0.7);
-    border-radius: 10px;
-    position: relative;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-120%);
 }
 
 #stream-controls {
@@ -83,19 +168,21 @@ body {
 
 button {
     border: none;
-    background-color: cadetblue;
+    background-color: #232020;
     color: #fff;
     padding: 10px 20px;
     font-size: 16px;
     cursor: pointer;
+    border-radius: 20px; /* Arredondando os botões de controle */
 }
 
+/* Área do chat */
 #chat-wrapper {
     position: fixed;
-    top: 10px;
+    top: 95px; /* Altere este valor para a altura exata da navbar */
     right: 10px;
-    width: 600px;
-    height: calc(100vh - 20px);
+    width: 450px;
+    height: calc(100vh - 100px); /* Reduza para acomodar a navbar */
     background-color: rgba(0, 0, 0, 0.7);
     border: 2px solid #000;
     border-radius: 10px;
@@ -124,15 +211,46 @@ button {
 #send-message {
     width: 70px;
     padding: 10px;
-    background-color: cadetblue;
+    background-color: #333;
     color: #fff;
     border: none;
     cursor: pointer;
+    border-radius: 20px; /* Arredondando o botão de envio de mensagem */
+}
+#screen-btn ion-icon {
+    font-size: 24px; /* Altere o tamanho do ícone */
+    margin-right: 0px; /* Espaço entre o ícone e o texto */
 }
 
+
+/* Responsividade geral */
 @media screen and (max-width: 768px) {
     #video-streams,
     #stream-controls-wrapper {
         width: 100vw;
     }
 }
+
+#mic-btn ion-icon, #camera-btn ion-icon, #leave-btn ion-icon {
+    font-size: 24px; /* Ajuste o tamanho conforme necessário */
+}
+    
+#mic-btn, #camera-btn, #screen-btn, #leave-btn {
+    margin-right: 4px; /* Ajuste o valor para o espaço desejado */
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: #333;
+    color: white;
+}
+
+#meeting-timer {
+    font-size: 18px;
+    font-weight: bold;
+    color: #ffffff; /* Cor amarela para destaque */
+}
+

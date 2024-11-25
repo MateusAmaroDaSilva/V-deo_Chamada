@@ -4,26 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Projeto Chamadas</title>
-    <link rel="stylesheet" type='text/css' media='screen' href="main.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="main.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=phone_disabled" />
+        <script type="module" src="https://unpkg.com/ionicons@6.0.0/dist/ionicons/ionicons.esm.js"></script>
+        <script nomodule src="https://unpkg.com/ionicons@6.0.0/dist/ionicons/ionicons.js"></script>
+    
 </head>
 <body>
+
+    <header class="header">
+        <div class="meeting-info-left">
+            <p id="meeting-date">Reunião Talklog</p> 
+            <span class="recording-icon">🔴 Gravando</span>
+        </div>
+
+        <div class="navbar">
+            <div class="navbar-title"></div>
+            <div class="navbar-timer">
+                <span id="meeting-timer">00:00:00</span>
+            </div>
+        </div>
+    </header>
+
     <button id="join-btn">Começar</button>
 
     <div id="stream-wrapper" style="display: none;">
         <div id="video-streams"></div>
 
         <div id="stream-controls-wrapper" style="display: none;">
-            <button id="leave-btn">Sair da transmissão</button>
-            <button id="mic-btn">Mic On</button>
-            <button id="camera-btn">Camera On</button>
-            <button id="share-screen-btn">Compartilhar Tela</button>
+            <button id="leave-btn"><ion-icon name="power-outline"></ion-icon></button>
+            <button id="mic-btn"><ion-icon name="mic-outline"></ion-icon></button>
+            <button id="camera-btn"><ion-icon name="videocam-outline"></ion-icon></button>
+            <button id="screen-btn"><ion-icon name="desktop-outline"></ion-icon></button>
         </div>
     </div>
 
     <div id="chat-wrapper" style="display: none;">
         <div id="chat-box"></div>
-        <input type="text" id="chat-input" placeholder="Digite uma mensagem..." />
-        <button id="send-message">Enviar</button>
+        <div id="chat-input-container">
+            <input type="text" id="chat-input" placeholder="Digite uma mensagem..." />
+            <button id="send-btn"></button>
+        </div>
     </div>
 
     <div id="summary-wrapper" style="display: none;">
@@ -43,16 +64,27 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
-    <script src='AgoraRTC_N-4.22.0.js'></script>
-    <script src='main.js'></script>
-
+    <script src="AgoraRTC_N-4.22.0.js"></script>
+    <script src="main.js"></script>
+    
     <script>
-        document.getElementById('join-btn').addEventListener('click', () => {
-            
-            console.log("Reunião iniciada.");
-            document.getElementById('stream-wrapper').style.display = 'flex'; 
-            document.getElementById('join-btn').style.display = 'none'; 
+        const socket = io();
+
+        socket.on('transcription', (data) => {
+            console.log('Transcrição parcial recebida:', data);
+            document.getElementById('transcription-content').innerText += data;
         });
-    </script>
+
+        document.getElementById('send-message').addEventListener('click', () => {
+            const messageInput = document.getElementById('chat-input');
+            const message = messageInput.value;
+
+            if (message) {
+                socket.emit('chat message', message);
+                messageInput.value = '';
+            }
+        });
+
+            </script>
 </body>
 </html>
