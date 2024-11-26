@@ -190,11 +190,11 @@ let toggleMic = async (e) => {
     if (localTracks[0].muted) {
         await localTracks[0].setMuted(false);
         micButton.innerHTML = '<ion-icon name="mic-outline"></ion-icon>'; 
-        micButton.style.backgroundColor = '#333';
+        micButton.style.backgroundColor = '#EE4B2';
     } else {
         await localTracks[0].setMuted(true);
         micButton.innerHTML = '<ion-icon name="mic-off-outline"></ion-icon>'; 
-        micButton.style.backgroundColor = '#333';
+        micButton.style.backgroundColor = '#EE4B2';
     }
 };
 
@@ -204,11 +204,11 @@ let toggleCamera = async (e) => {
     if (localTracks[1].muted) {
         await localTracks[1].setMuted(false);
         cameraButton.innerHTML = '<ion-icon name="videocam-outline"></ion-icon>'; 
-        cameraButton.style.backgroundColor = '#333';
+        cameraButton.style.backgroundColor = '#EE4B2';
     } else {
         await localTracks[1].setMuted(true);
         cameraButton.innerHTML = '<ion-icon name="videocam-off-outline"></ion-icon>'; 
-        cameraButton.style.backgroundColor = '#333';
+        cameraButton.style.backgroundColor = '#EE4B2';
     }
 };
 
@@ -281,7 +281,7 @@ async function startTranscription() {
             formData.append('audio', audioBlob, 'audio.mp3');
 
             try {
-                const response = await fetchWithRetry('http://localhost:3000/transcribe', {
+                const response = await fetchWithRetry('https://video-chamada-r6rl.onrender.com/transcribe', {
                     method: 'POST',
                     body: formData
                 });
