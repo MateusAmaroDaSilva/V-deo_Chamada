@@ -14,7 +14,7 @@
 .meeting-info-right {
     display: flex;
     align-items: center;
-    gap: 10px; /* Espaço entre ID e botão de copiar */
+    gap: 10px; 
 }
 
 .meeting-id {
@@ -60,14 +60,13 @@
     padding: 5px 10px;
     cursor: pointer;
     font-size: 14px;
-    border-radius: 10px; /* Arredondando o botão */
+    border-radius: 10px; 
 }
 
 .copy-link:hover {
     background-color: #333;
 }
 
-/* Responsividade da navbar */
 @media screen and (max-width: 768px) {
     .header {
         flex-direction: column;
@@ -79,7 +78,6 @@
     }
 }
 
-/* Body */
 body {
     background-color: #444;
     margin: 0;
@@ -88,12 +86,11 @@ body {
     color: white;
 }
 
-/* Botão de entrada */
 #join-btn {
     position: fixed;
-    bottom: 20px; /* Mover para a parte inferior */
+    bottom: 20px;
     left: 50%;
-    transform: translateX(-50%); /* Centraliza o botão horizontalmente */
+    transform: translateX(-50%);
     font-size: 18px;
     padding: 20px 40px;
     background-color: cadetblue;
@@ -101,16 +98,15 @@ body {
     border: none;
     cursor: pointer;
     z-index: 1000;
-    border-radius: 25px; /* Arredondando o botão */
+    border-radius: 25px; 
 }
 
-/* Área de transmissão */
 #stream-wrapper {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     justify-content: flex-start;
-    height: calc(100vh - 100px); /* Ajuste para não sobrepor os botões na parte inferior */
+    height: calc(100vh - 100px); 
     padding: 20px;
     box-sizing: border-box;
     margin-right: 440px;
@@ -173,16 +169,15 @@ button {
     padding: 10px 20px;
     font-size: 16px;
     cursor: pointer;
-    border-radius: 20px; /* Arredondando os botões de controle */
+    border-radius: 20px; 
 }
 
-/* Área do chat */
 #chat-wrapper {
     position: fixed;
-    top: 95px; /* Altere este valor para a altura exata da navbar */
+    top: 95px; 
     right: 10px;
     width: 450px;
-    height: calc(100vh - 100px); /* Reduza para acomodar a navbar */
+    height: calc(100vh - 100px);
     background-color: rgba(0, 0, 0, 0.7);
     border: 2px solid #000;
     border-radius: 10px;
@@ -215,15 +210,14 @@ button {
     color: #fff;
     border: none;
     cursor: pointer;
-    border-radius: 20px; /* Arredondando o botão de envio de mensagem */
+    border-radius: 20px; 
 }
 #screen-btn ion-icon {
-    font-size: 24px; /* Altere o tamanho do ícone */
-    margin-right: 0px; /* Espaço entre o ícone e o texto */
+    font-size: 24px; 
+    margin-right: 0px;
 }
 
 
-/* Responsividade geral */
 @media screen and (max-width: 768px) {
     #video-streams,
     #stream-controls-wrapper {
@@ -232,11 +226,11 @@ button {
 }
 
 #mic-btn ion-icon, #camera-btn ion-icon, #leave-btn ion-icon {
-    font-size: 24px; /* Ajuste o tamanho conforme necessário */
+    font-size: 24px;
 }
     
 #mic-btn, #camera-btn, #screen-btn, #leave-btn {
-    margin-right: 4px; /* Ajuste o valor para o espaço desejado */
+    margin-right: 4px; 
 }
 
 .navbar {
@@ -251,6 +245,6 @@ button {
 #meeting-timer {
     font-size: 18px;
     font-weight: bold;
-    color: #ffffff; /* Cor amarela para destaque */
+    color: #ffffff; 
 }
 
