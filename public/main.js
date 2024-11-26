@@ -16,7 +16,7 @@ let audioChunks = [];
 let lastTranscriptionTime = 0;
 const transcriptionInterval = 10000; 
 
-const socket = io('http://localhost:3000'); 
+const socket = io('https://video-chamada-r6rl.onrender.com/'); 
 
 
 socket.on('user name', (name) => {
