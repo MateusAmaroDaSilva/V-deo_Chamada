@@ -10,14 +10,13 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
-        origin: '*', // Permitir conexões de qualquer origem
+        origin: '*', 
         methods: ['GET', 'POST']
     }
 });
 
-const upload = multer({ dest: 'audio/' }); // Diretório temporário para uploads
+const upload = multer({ dest: 'audio/' }); 
 
-// Middleware para CORS no Express
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
@@ -25,10 +24,8 @@ app.use((req, res, next) => {
     next();
 });
 
-// Servir arquivos estáticos da pasta "public"
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Endpoint de transcrição
 app.post('/transcribe', upload.single('audio'), async (req, res) => {
     try {
         if (!req.file) {
@@ -55,7 +52,6 @@ app.post('/transcribe', upload.single('audio'), async (req, res) => {
                 console.log(`Transcrição recebida: ${text}`);
                 transcriptionResult += text;
 
-                // Enviar transcrição parcial para os clientes conectados
                 io.emit('transcription', text);
             });
 
@@ -89,23 +85,19 @@ app.post('/transcribe', upload.single('audio'), async (req, res) => {
     }
 });
 
-// Configuração do Socket.IO
 io.on('connection', (socket) => {
     console.log(`Novo cliente conectado: ${socket.id}`);
 
-    // Receber mensagens do chat
     socket.on('chat message', (msg) => {
         console.log(`Mensagem recebida: ${msg}`);
-        io.emit('chat message', msg); // Reenvia para todos os clientes conectados
+        io.emit('chat message', msg);
     });
 
-    // Tratamento de desconexão
     socket.on('disconnect', () => {
         console.log(`Cliente desconectado: ${socket.id}`);
     });
 });
 
-// Inicializar o servidor
 const PORT = 3000;
 server.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
