@@ -82,6 +82,8 @@ let joinAndDisplayLocalStream = async () => {
         localTracks[1].play(`user-${UID}`);
         await client.publish([localTracks[0], localTracks[1]]);
 
+        monitorAudioActivity();
+
         await startTranscription();
     } catch (error) {
         console.error('Erro ao iniciar o stream local: ', error);
@@ -138,6 +140,119 @@ let handleUserLeft = async (user) => {
         loadSummary();
     }
 };
+
+const audioActivity = {};
+
+async function monitorAudioActivity() {
+    for (const uid in remoteUsers) {
+        const user = remoteUsers[uid];
+        if (user.audioTrack) {
+            const volumeLevel = await user.audioTrack.getVolumeLevel();
+            updateAudioBorder(uid, volumeLevel);
+        }
+    }
+
+    if (localTracks[0]) {
+        const volumeLevel = await localTracks[0].getVolumeLevel();
+        updateAudioBorder("local", volumeLevel);
+    }
+
+    requestAnimationFrame(monitorAudioActivity);
+}
+
+function updateAudioBorder(uid, volumeLevel) {
+    const container = uid === "local" ? 
+        document.getElementById(`user-container-${client.uid}`) : 
+        document.getElementById(`user-container-${uid}`);
+
+    if (container) {
+        if (volumeLevel > 0.1) {
+            container.style.border = "3px solid green";
+        } else {
+            container.style.border = "none";
+        }
+    }
+}
+
+let audioContext = new (window.AudioContext || window.webkitAudioContext)();
+let analyser = audioContext.createAnalyser();
+let microphone;
+let audioLevel = 0;
+let threshold = 0.03;  // Ajuste esse valor conforme necessário (valor entre 0 e 1)
+let minVoiceFrequency = 150;  // Frequência mínima da voz humana (em Hz)
+let maxVoiceFrequency = 3000;  // Frequência máxima da voz humana (em Hz)
+
+let isSpeaking = false;
+let stopSpeakingTimeout;
+
+async function setupAudio() {
+    try {
+        // Obtendo o fluxo de áudio do usuário
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        // Conectando a fonte de áudio (microfone) ao analisador
+        microphone = audioContext.createMediaStreamSource(stream);
+        microphone.connect(analyser);
+
+        // Configuração do analisador
+        analyser.fftSize = 256;  // Tamanho do FFT (pode ajustar para melhor resolução)
+        let bufferLength = analyser.frequencyBinCount;
+        let dataArray = new Uint8Array(bufferLength);
+
+        // Função de processamento de áudio
+        function checkAudioLevel() {
+            analyser.getByteFrequencyData(dataArray);
+
+            // Calculando o nível de áudio total
+            let sum = 0;
+            for (let i = 0; i < bufferLength; i++) {
+                sum += dataArray[i];
+            }
+            audioLevel = sum / bufferLength;  // Média do nível de áudio
+
+            // Verificando se o áudio está na faixa de frequências da voz
+            let voiceDetected = false;
+            for (let i = 0; i < bufferLength; i++) {
+                let frequency = analyser.frequencyBinCount / bufferLength * i;
+                // Verifica se a frequência está na faixa da fala humana
+                if (frequency >= minVoiceFrequency && frequency <= maxVoiceFrequency && dataArray[i] > threshold * 255) {
+                    voiceDetected = true;
+                    break;
+                }
+            }
+
+            const videoContainer = document.querySelector('.video-container'); // Pega a div da câmera (se necessário ajusta o seletor)
+
+            // Só ativa a borda verde se detectar voz e garantir que a borda não apareça imediatamente
+            if (voiceDetected && !isSpeaking) {
+                isSpeaking = true;  // Marca que o usuário está falando
+                if (videoContainer && !videoContainer.style.border) {
+                    videoContainer.style.border = '5px solid green';  // Ativando a borda verde
+                }
+            }
+
+            // Se o usuário não estiver falando, configurar um temporizador para remover a borda
+            if (!voiceDetected && isSpeaking) {
+                stopSpeakingTimeout = setTimeout(() => {
+                    isSpeaking = false;  // Marca que o usuário parou de falar
+                    if (videoContainer) {
+                        videoContainer.style.border = '';  // Removendo a borda verde
+                    }
+                }, 200);  // Tempo de 200ms para remover a borda após a última fala detectada
+            }
+
+            // Continuar verificando o áudio a cada intervalo
+            requestAnimationFrame(checkAudioLevel);
+        }
+
+        checkAudioLevel();  // Inicia a verificação do áudio
+    } catch (err) {
+        console.log('Erro ao acessar o microfone:', err);
+    }
+}
+
+// Chame a função setupAudio para iniciar o processamento do áudio
+setupAudio();
 
 let leaveAndRemoveLocalStream = async () => {
     if (!isJoined) return;
@@ -234,7 +349,7 @@ let toggleScreenShare = async (e) => {
             document.getElementById('user-container-screen').remove();
             screenTrack = null;
             e.target.innerText = 'Compartilhar Tela';
-            e.target.style.backgroundColor = 'cadetblue';
+            e.target.style.backgroundColor = '#EE4B2B';
         } catch (error) {
             console.error('Erro ao parar o compartilhamento de tela: ', error);
         }

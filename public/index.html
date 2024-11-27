@@ -29,7 +29,12 @@
     <button id="join-btn">Começar</button>
 
     <div id="stream-wrapper" style="display: none;">
-        <div id="video-streams"></div>
+        <div id="video-streams">
+            <div class="video-container" id="user-container-${UID}">
+                <video id="user-video-${UID}" autoplay playsinline></video>
+            </div>
+        </div>
+    </div>    
 
         <div id="stream-controls-wrapper" style="display: none;">
             <button id="leave-btn"><ion-icon name="power-outline"></ion-icon></button>
@@ -44,21 +49,6 @@
         <div id="chat-input-container">
             <input type="text" id="chat-input" placeholder="Digite uma mensagem..." />
             <button id="send-btn"></button>
-        </div>
-    </div>
-
-    <div id="summary-wrapper" style="display: none;">
-        <h1>Resumo da Reunião</h1>
-        <div id="summary-content">
-            <p>Carregando resumo...</p>
-        </div>
-        <button id="back-to-meeting">Voltar para a reunião</button>
-    </div>
-
-    <div id="transcription-wrapper" style="display: none;">
-        <h2>Transcrição</h2>
-        <div id="transcription-content">
-            <p>Carregando transcrição...</p>
         </div>
     </div>
 
@@ -85,6 +75,6 @@
             }
         });
 
-            </script>
+    </script>
 </body>
 </html>
