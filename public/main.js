@@ -125,35 +125,27 @@
     };
 
     let handleUserLeft = async (user) => {
-        // Remove o usuário da lista de usuários remotos
         delete remoteUsers[user.uid];
     
-        // Remove o elemento HTML associado ao usuário que saiu
         const player = document.getElementById(`user-container-${user.uid}`);
         if (player) {
             player.remove();
         }
     
-        // Garante que outros usuários continuam na chamada sem redirecionamento
         console.log(`Usuário ${user.uid} saiu. Outros ainda estão na chamada.`);
     };
     
-    // Função chamada quando o próprio usuário decide sair da reunião
     let leaveMeeting = async () => {
-        // Libera os recursos locais (áudio e vídeo)
         for (let track of localTracks) {
             track.stop();
             track.close();
         }
     
-        // Sai da chamada no cliente da AgoraRTC
         await client.leave();
     
-        // Redireciona o usuário para a tela de informações da reunião
-        window.location.href = '/informacoes.html'; // Altere para o caminho da sua página
+        window.location.href = '/informacoes.html';
     };
     
-    // Adicione o evento ao botão de saída
     document.getElementById('leave-btn').addEventListener('click', leaveMeeting);    
 
     const audioActivity = {};
@@ -193,80 +185,69 @@
     let analyser = audioContext.createAnalyser();
     let microphone;
     let audioLevel = 0;
-    let threshold = 0.03;  // Ajuste esse valor conforme necessário (valor entre 0 e 1)
-    let minVoiceFrequency = 150;  // Frequência mínima da voz humana (em Hz)
-    let maxVoiceFrequency = 3000;  // Frequência máxima da voz humana (em Hz)
+    let threshold = 0.03;  
+    let minVoiceFrequency = 150;  
+    let maxVoiceFrequency = 3000;  
 
     let isSpeaking = false;
     let stopSpeakingTimeout;
 
     async function setupAudio() {
         try {
-            // Obtendo o fluxo de áudio do usuário
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-            // Conectando a fonte de áudio (microfone) ao analisador
             microphone = audioContext.createMediaStreamSource(stream);
             microphone.connect(analyser);
 
-            // Configuração do analisador
-            analyser.fftSize = 256;  // Tamanho do FFT (pode ajustar para melhor resolução)
+            analyser.fftSize = 256;  
             let bufferLength = analyser.frequencyBinCount;
             let dataArray = new Uint8Array(bufferLength);
 
-            // Função de processamento de áudio
             function checkAudioLevel() {
                 analyser.getByteFrequencyData(dataArray);
 
-                // Calculando o nível de áudio total
                 let sum = 0;
                 for (let i = 0; i < bufferLength; i++) {
                     sum += dataArray[i];
                 }
-                audioLevel = sum / bufferLength;  // Média do nível de áudio
+                audioLevel = sum / bufferLength;  
 
-                // Verificando se o áudio está na faixa de frequências da voz
                 let voiceDetected = false;
                 for (let i = 0; i < bufferLength; i++) {
                     let frequency = analyser.frequencyBinCount / bufferLength * i;
-                    // Verifica se a frequência está na faixa da fala humana
                     if (frequency >= minVoiceFrequency && frequency <= maxVoiceFrequency && dataArray[i] > threshold * 255) {
                         voiceDetected = true;
                         break;
                     }
                 }
 
-                const videoContainer = document.querySelector('.video-container'); // Pega a div da câmera (se necessário ajusta o seletor)
+                const videoContainer = document.querySelector('.video-container'); 
 
-                // Só ativa a borda verde se detectar voz e garantir que a borda não apareça imediatamente
                 if (voiceDetected && !isSpeaking) {
-                    isSpeaking = true;  // Marca que o usuário está falando
+                    isSpeaking = true;  
                     if (videoContainer && !videoContainer.style.border) {
-                        videoContainer.style.border = '5px solid green';  // Ativando a borda verde
+                        videoContainer.style.border = '5px solid green'; 
                     }
                 }
 
-                // Se o usuário não estiver falando, configurar um temporizador para remover a borda
                 if (!voiceDetected && isSpeaking) {
                     stopSpeakingTimeout = setTimeout(() => {
-                        isSpeaking = false;  // Marca que o usuário parou de falar
+                        isSpeaking = false;  
                         if (videoContainer) {
-                            videoContainer.style.border = '';  // Removendo a borda verde
+                            videoContainer.style.border = '';  
                         }
-                    }, 200);  // Tempo de 200ms para remover a borda após a última fala detectada
+                    }, 200);  
                 }
 
-                // Continuar verificando o áudio a cada intervalo
                 requestAnimationFrame(checkAudioLevel);
             }
 
-            checkAudioLevel();  // Inicia a verificação do áudio
+            checkAudioLevel();  
         } catch (err) {
             console.log('Erro ao acessar o microfone:', err);
         }
     }
 
-    // Chame a função setupAudio para iniciar o processamento do áudio
     setupAudio();
 
     let leaveAndRemoveLocalStream = async () => {
