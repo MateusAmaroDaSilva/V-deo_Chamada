@@ -413,18 +413,18 @@
             };
 
             mediaRecorder.onstop = async () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+                const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' }); // Arquivo gravado
                 const formData = new FormData();
-                formData.append('audio', audioBlob, 'audio.mp3');
+                formData.append('audio', audioBlob, 'audio.mp3'); // Nome do arquivo
             
                 try {
-                    const response = await fetch('https://audionode.onrender.com/v1/uploadFile', {
+                    const response = await fetch('https://audionode.onrender.com/v1/uploadFile', { // Sua rota API
                         method: 'POST',
-                        body: formData
+                        body: formData, // Envia o arquivo como multipart/form-data
                     });
             
                     if (response.ok) {
-                        const result = await response.json();
+                        const result = await response.json(); // Resposta da API
                         console.log("Áudio enviado com sucesso:", result);
                     } else {
                         console.error('Erro ao enviar o áudio:', response.status);
@@ -432,7 +432,7 @@
                 } catch (error) {
                     console.error('Erro ao enviar o áudio para o servidor:', error);
                 }
-            };
+            };        
 
             mediaRecorder.start();
             console.log("Gravação de áudio iniciada.");
