@@ -432,7 +432,7 @@ const startRecording = async () => {
         mediaRecorder.onstop = async () => {
             const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' }); // Cria o arquivo Blob do áudio gravado
             const formData = new FormData();
-            formData.append('audio', audioBlob, 'audio.mp3'); // Nomeia o arquivo
+            formData.append('file', audioBlob, 'audio.mp3'); // Nomeia o arquivo
 
             try {
                 // Envia o arquivo para a API
