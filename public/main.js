@@ -412,27 +412,63 @@
                 audioChunks.push(event.data);
             };
 
-            mediaRecorder.onstop = async () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' }); // Arquivo gravado
-                const formData = new FormData();
-                formData.append('audio', audioBlob, 'audio.mp3'); // Nome do arquivo
-            
-                try {
-                    const response = await fetch('https://audionode.onrender.com/v1/uploadFile', { // Sua rota API
-                        method: 'POST',
-                        body: formData, // Envia o arquivo como multipart/form-data
-                    });
-            
-                    if (response.ok) {
-                        const result = await response.json(); // Resposta da API
-                        console.log("Áudio enviado com sucesso:", result);
-                    } else {
-                        console.error('Erro ao enviar o áudio:', response.status);
-                    }
-                } catch (error) {
-                    console.error('Erro ao enviar o áudio para o servidor:', error);
+            // Array para armazenar os chunks de áudio
+let audioChunks = [];
+
+// Configuração do MediaRecorder
+const startRecording = async () => {
+    try {
+        // Solicitar permissão para usar o microfone
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        const mediaRecorder = new MediaRecorder(stream);
+
+        // Evento para capturar chunks enquanto grava
+        mediaRecorder.ondataavailable = (event) => {
+            audioChunks.push(event.data);
+        };
+
+        // Evento quando a gravação for interrompida
+        mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' }); // Cria o arquivo Blob do áudio gravado
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'audio.mp3'); // Nomeia o arquivo
+
+            try {
+                // Envia o arquivo para a API
+                const response = await fetch('https://audionode.onrender.com/v1/uploadFile', { 
+                    method: 'POST',
+                    body: formData, // Envia o arquivo como multipart/form-data
+                });
+
+                if (response.ok) {
+                    const result = await response.json(); // Lê a resposta da API
+                    console.log("Áudio enviado com sucesso:", result);
+                } else {
+                    console.error('Erro ao enviar o áudio:', response.status);
                 }
-            };        
+            } catch (error) {
+                console.error('Erro ao enviar o áudio para o servidor:', error);
+            }
+        };
+
+        // Inicia a gravação
+        mediaRecorder.start();
+
+        console.log("Gravação iniciada. Pressione 'Stop' para finalizar.");
+
+        // Parar a gravação após 5 segundos (apenas para teste)
+        setTimeout(() => {
+            mediaRecorder.stop();
+            console.log("Gravação parada.");
+        }, 5000); // Tempo de gravação em milissegundos
+    } catch (error) {
+        console.error('Erro ao acessar o microfone:', error);
+    }
+};
+
+// Chama a função para iniciar a gravação
+startRecording();
 
             mediaRecorder.start();
             console.log("Gravação de áudio iniciada.");
