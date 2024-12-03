@@ -59,15 +59,43 @@ function toggleExclusiveSelection(button, color) {
   }
 }
 
-function handleExit() {
-  const saveButton = document.getElementById('save-btn');
+ document.getElementById('save-btn').addEventListener('click', async () => {
+  try {
+      const response = await fetch('/download-transcription', {
+          method: 'GET',
+          headers: {
+              'Content-Type': 'application/json'
+          }
+      });
 
-  if (saveButton.classList.contains('selected')) {
-    window.location.href = 'https://audionode.onrender.com/v1/uploadFile';
-  } else {
-    alert('Você não selecionou "Salvar".');
+      if (response.ok) {
+          const fileBlob = await response.blob();
+          const formData = new FormData();
+          formData.append('file', fileBlob, 'transcricao.txt');
+
+          const uploadResponse = await fetch('https://audionode.onrender.com/v1/uploadFile', {
+              method: 'POST',
+              body: formData
+          });
+
+          if (uploadResponse.ok) {
+              const result = await uploadResponse.json();
+              console.log("Arquivo enviado com sucesso:", result);
+              alert("Transcrição salva com sucesso!");
+          } else {
+              console.error('Erro ao enviar o arquivo para o servidor externo:', uploadResponse.status);
+          }
+      } else {
+          console.error('Erro ao acessar o arquivo de transcrição:', response.status);
+      }
+  } catch (error) {
+      console.error('Erro ao enviar a transcrição:', error);
   }
-}
+});
+
+document.getElementById('exit-btn').addEventListener('click', () => {
+  window.location.href = '/'; 
+});
   </script>
 </body>
 </html>
