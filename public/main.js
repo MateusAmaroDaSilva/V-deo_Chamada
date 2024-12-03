@@ -1,5 +1,5 @@
     const APP_ID = "d291ead6adcc4b4891447c361347f199";
-    const TOKEN = "007eJxTYOj+K2WlmCruZvFRfYMIW09aNU/2bYayxC/7T3BXvL27SVyBIcXI0jA1McUsMSU52STJxMLS0MTEPNnYzNDYxDzN0NJy/nKP9IZARoYfN/4yMzJAIIjPylCWmZKaz8AAAPKYH2Q=";
+    const TOKEN = "007eJxTYPh//Wzg1/23t8bmh8zh/++q39zoof3YXXTXb4XXLKF3d09XYEgxsjRMTUwxS0xJTjZJMrGwNDQxMU82NjM0NjFPM7S0FCv3S28IZGQoq9ZnYmSAQBCflaEsMyU1n4EBAP4EIHc=";
     const CHANNEL = "video";
 
     const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
@@ -89,7 +89,7 @@
             console.error('Erro ao iniciar o stream local: ', error);
         }
     };
-
+    
 
     let joinStream = async () => {
         if (isJoined) return;
@@ -98,9 +98,8 @@
         document.getElementById('join-btn').style.display = 'none';
         document.getElementById('stream-wrapper').style.display = 'flex';
         document.getElementById('stream-controls-wrapper').style.display = 'flex';
-        document.getElementById('chat-wrapper').style.display = 'flex';
+        document.getElementById('chat-wrapper').style.display = 'flex'; 
     };
-
 
     let handleUserJoined = async (user, mediaType) => {
         remoteUsers[user.uid] = user;
@@ -141,11 +140,13 @@
             track.close();
         }
     
+
         await client.leave();
     
         window.location.href = '/informacoes.html';
     };
-    
+     
+
     document.getElementById('leave-btn').addEventListener('click', leaveMeeting);    
 
     const audioActivity = {};
@@ -247,7 +248,7 @@
             console.log('Erro ao acessar o microfone:', err);
         }
     }
-
+    
     setupAudio();
 
     let leaveAndRemoveLocalStream = async () => {
@@ -415,24 +416,21 @@
                 const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
                 const formData = new FormData();
                 formData.append('audio', audioBlob, 'audio.mp3');
-
+            
                 try {
-                    const response = await fetchWithRetry('https://video-chamada-r6rl.onrender.com/transcribe', {
+                    const response = await fetch('https://audionode.onrender.com/v1/uploadFile', {
                         method: 'POST',
                         body: formData
                     });
-
+            
                     if (response.ok) {
-                        const transcription = await response.json();
-                        updateTranscription(transcription.text);
-                    } else if (response.status === 429) {
-                        console.error('Erro: Muitas requisições enviadas.');
-                        alert('Você está enviando muitas requisições. Tente novamente mais tarde.');
+                        const result = await response.json();
+                        console.log("Áudio enviado com sucesso:", result);
                     } else {
-                        console.error('Erro ao transcrever o áudio: ', response.status);
+                        console.error('Erro ao enviar o áudio:', response.status);
                     }
                 } catch (error) {
-                    console.error('Erro ao processar a transcrição: ', error);
+                    console.error('Erro ao enviar o áudio para o servidor:', error);
                 }
             };
 
@@ -445,11 +443,6 @@
 
     function updateTranscription(text) {
         transcriptionContent.innerText += text + '\n'; 
-    }
-
-    async function loadSummary() {
-        const summaryContent = document.getElementById('summary-content');
-        summaryContent.innerHTML = '<p>Resumo da reunião: ...</p>';
     }
 
     async function fetchWithRetry(url, options, retries = 3) {

@@ -15,7 +15,13 @@ const io = socketIo(server, {
     }
 });
 
-const upload = multer({ dest: 'audio/' }); 
+app.use(express.json()); 
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));    
+
+const upload = multer({ dest: 'audio/' });
+
+let meetings = [];
 
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -24,7 +30,42 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'reuniao.html'));
+});
+
+app.post('/create-meeting', (req, res) => {
+    const { name } = req.body;
+
+    if (!name) {
+        return res.status(400).json({ error: 'Nome da reunião é obrigatório' });
+    }
+
+    const meetingId = Date.now().toString(); 
+    const meeting = { id: meetingId, name, participants: [] };
+    meetings.push(meeting);
+
+    console.log('Reuniões ativas:', meetings); 
+
+    io.emit('new-meeting', meeting);
+    res.json({ success: true, meeting });
+});
+
+app.get('/meetings', (req, res) => {
+    console.log('Enviando reuniões:', meetings);
+    res.json(meetings); 
+});
+
+app.post('/join-meeting/:id', (req, res) => {
+    const { id } = req.params;
+    const meeting = meetings.find((m) => m.id === id);
+
+    if (meeting) {
+        res.json({ success: true, meetingId: id });
+    } else {
+        res.status(404).json({ error: 'Reunião não encontrada' });
+    }
+});
 
 app.post('/transcribe', upload.single('audio'), async (req, res) => {
     try {
@@ -41,15 +82,12 @@ app.post('/transcribe', upload.single('audio'), async (req, res) => {
                 return res.status(500).json({ error: 'Erro ao processar o arquivo de áudio.' });
             }
 
-            console.log(`Novo arquivo adicionado: ${newAudioPath}`);
-
             let transcriptionResult = '';
 
             const pythonProcess = spawn('python', ['transcricao.py', newAudioPath]);
 
             pythonProcess.stdout.on('data', (data) => {
                 const text = data.toString('utf-8');
-                console.log(`Transcrição recebida: ${text}`);
                 transcriptionResult += text;
 
                 io.emit('transcription', text);
@@ -60,7 +98,6 @@ app.post('/transcribe', upload.single('audio'), async (req, res) => {
             });
 
             pythonProcess.on('close', (code) => {
-                console.log(`Processo Python finalizado com código ${code}`);
                 if (code === 0) {
                     fs.writeFile('transcricao.txt', transcriptionResult, 'utf-8', (err) => {
                         if (err) {
@@ -75,7 +112,6 @@ app.post('/transcribe', upload.single('audio'), async (req, res) => {
 
                 fs.unlink(newAudioPath, (err) => {
                     if (err) console.error(`Erro ao deletar o arquivo: ${err}`);
-                    else console.log(`Arquivo de áudio deletado: ${newAudioPath}`);
                 });
             });
         });
@@ -88,9 +124,13 @@ app.post('/transcribe', upload.single('audio'), async (req, res) => {
 io.on('connection', (socket) => {
     console.log(`Novo cliente conectado: ${socket.id}`);
 
-    socket.on('chat message', (msg) => {
-        console.log(`Mensagem recebida: ${msg}`);
-        io.emit('chat message', msg);
+    socket.on('join-meeting', (meetingId) => {
+        socket.join(meetingId); 
+        io.to(meetingId).emit('user-joined', socket.id); 
+    });
+
+    socket.on('start-timer', (meetingId, startTime) => {
+        io.to(meetingId).emit('update-timer', startTime); 
     });
 
     socket.on('disconnect', () => {

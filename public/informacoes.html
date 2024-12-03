@@ -1,1 +1,73 @@
-<h1>DEU CERTO</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resumo da Reunião</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="meeting-summary-container">
+    <h1 class="meeting-summary-title">Video Chamada Finalizada</h1>
+    <div class="meeting-summary-form">
+      <div class="meeting-summary-field">
+        <label for="meeting-title">Título:</label>
+        <input type="text" id="meeting-title" class="meeting-summary-input" placeholder="" disabled>
+      </div>
+      <div class="meeting-summary-field">
+        <label for="meeting-date">Data:</label>
+        <input type="text" id="meeting-date" class="meeting-summary-input" placeholder="" disabled>
+      </div>
+      <div class="meeting-summary-field">
+        <label for="meeting-duration">Duração:</label>
+        <input type="text" id="meeting-duration" class="meeting-summary-input" placeholder="" disabled>
+      </div>
+      <div class="meeting-summary-field">
+        <label for="meeting-participants">Participantes:</label>
+        <input type="text" id="meeting-participants" class="meeting-summary-input" placeholder="" disabled>
+      </div>
+    </div>
+    
+    <div class="save-transcription-container">
+      <p>Gostaria que Transcrevemos sua reunião??</p>
+      <button class="save-button" onclick="toggleExclusiveSelection(this, 'green')">Salvar</button>
+      <button class="no-save-button" onclick="toggleExclusiveSelection(this, 'red')">Não Salvar</button>
+    </div>
+
+    <button class="meeting-summary-button">Sair</button>
+  </div>
+  <script>
+function toggleExclusiveSelection(button, color) {
+
+  const buttons = document.querySelectorAll('.save-button, .no-save-button');
+
+  if (button.classList.contains('selected')) {
+    button.classList.remove('selected');
+    button.style.backgroundColor = '#3a3a3a'; 
+    button.style.color = 'white';
+  } else {
+   
+    buttons.forEach(btn => {
+      btn.classList.remove('selected');
+      btn.style.backgroundColor = '#3a3a3a'; 
+      btn.style.color = 'white';
+    });
+
+    button.classList.add('selected');
+    button.style.backgroundColor = color; 
+    button.style.color = 'white';
+  }
+}
+
+function handleExit() {
+  const saveButton = document.getElementById('save-btn');
+
+  if (saveButton.classList.contains('selected')) {
+    window.location.href = 'https://audionode.onrender.com/v1/uploadFile';
+  } else {
+    alert('Você não selecionou "Salvar".');
+  }
+}
+  </script>
+</body>
+</html>

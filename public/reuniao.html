@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Chamadas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #333;
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            margin: 0;
+        }
+
+        .btn {
+            background-color: #ffca28;
+            color: black;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            background-color: #ffc107;
+        }
+
+        .reunion-list {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .reunion-card {
+            background-color: #444;
+            padding: 20px;
+            border-radius: 8px;
+            width: 300px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .card-info {
+            margin-bottom: 40px;
+        }
+
+        .timer {
+            position: absolute;
+            bottom: 10px;
+            left: 10px; 
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .card-footer {
+            position: absolute; 
+            bottom: 10px;
+            right: 10px; 
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #444;
+            padding: 20px;
+            border-radius: 8px;
+            width: 400px;
+            text-align: center;
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #555;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .modal-content .btn {
+            width: 100%;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .status .active-icon {
+            width: 15px;
+            height: 15px;
+            background-color: #f44336;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 8px #f44336;
+        }
+
+        .status .active-icon::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background-color: #fff;
+            border-radius: 50%;
+        }
+
+        .status {
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Video Chamadas</h1>
+        <button class="btn" onclick="openModal()">Nova Reunião</button>
+    </div>
+
+    <p>Todas as chamadas abertas para um bate-papo mais interativo</p>
+
+    <div class="reunion-list" id="reunion-list">
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h2>Criar Nova Reunião</h2>
+            <input type="text" id="reunion-name" placeholder="Nome da reunião">
+            <button class="btn" onclick="createReunion()">Criar</button>
+        </div>
+    </div>
+
+    <script>
+        const baseUrl = 'http://localhost:3000'; 
+        const reunionList = document.getElementById('reunion-list');
+        const modal = document.getElementById('modal');
+        const reunionNameInput = document.getElementById('reunion-name');
+
+        const openModal = () => {
+            modal.style.display = 'flex'; 
+
+        };
+        const closeModal = () => {
+            modal.style.display = 'none'; 
+        };
+
+        const addReunionToList = (meeting) => {
+            const reunionCard = document.createElement('div');
+            reunionCard.classList.add('reunion-card');
+            reunionCard.innerHTML = `
+                <h2>${meeting.name}</h2>
+                <div class="card-info">
+                    <p class="date">${new Date().toLocaleDateString('pt-BR')}</p>
+                    <div class="status">
+                        <div class="active-icon"></div>
+                        <span>Ativo</span>
+                    </div>
+                </div>
+                <div class="timer" id="timer-${meeting.id}">00:00:00</div>
+                <div class="card-footer">
+                    <button class="btn" onclick="joinReunion('${meeting.id}')">Entrar</button>
+                </div>
+            `;
+            reunionList.appendChild(reunionCard);
+            startTimer(meeting.id);
+        };
+
+        const startTimer = (meetingId) => {
+            let seconds = 0;
+            let minutes = 0;
+            let hours = 0;
+
+            const timerElement = document.getElementById(`timer-${meetingId}`);
+
+            const updateTimer = () => {
+                seconds++;
+                if (seconds === 60) {
+                    seconds = 0;
+                    minutes++;
+                }
+                if (minutes === 60) {
+                    minutes = 0;
+                    hours++;
+                }
+
+                timerElement.textContent = `${formatTime(hours)}:${formatTime(minutes)}:${formatTime(seconds)}`;
+            };
+
+            const formatTime = (time) => (time < 10 ? `0${time}` : time);
+
+            setInterval(updateTimer, 1000);
+        };
+
+        // Função para entrar na reunião
+        const joinReunion = async (id) => {
+            try {
+                const response = await fetch(`${baseUrl}/join-meeting/${id}`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Reunião não encontrada');
+                }
+
+                const { meetingId } = await response.json();
+                window.location.href = `index.html?id=${meetingId}`;
+            } catch (error) {
+                console.error('Erro ao entrar na reunião:', error);
+                alert('Erro ao entrar na reunião!');
+            }
+        };
+
+        // Função chamada ao carregar a página
+        window.onload = async () => {
+            const meetings = await fetchReunions();
+            meetings.forEach(addReunionToList);
+        };
+
+        // Função para buscar reuniões
+        const fetchReunions = async () => {
+            try {
+                const response = await fetch(`${baseUrl}/meetings`);
+                if (!response.ok) {
+                    throw new Error('Erro ao buscar reuniões');
+                }
+
+                const meetings = await response.json();
+                return meetings;
+            } catch (error) {
+                console.error('Erro ao buscar reuniões:', error);
+                alert('Erro ao carregar reuniões!');
+                return [];
+            }
+        };
+
+        // Função para criar nova reunião
+        const createReunion = async () => {
+            const name = reunionNameInput.value;
+            if (!name) {
+                alert('Por favor, insira um nome para a reunião.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${baseUrl}/create-meeting`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    window.location.href = `reuniao.html?id=${data.meeting.id}`; 
+                }
+            } catch (error) {
+                console.error('Erro ao criar reunião:', error);
+                alert('Erro ao criar reunião!');
+            }
+        };
+    </script>
+</body>
+</html>

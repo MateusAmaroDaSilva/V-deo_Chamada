@@ -145,7 +145,6 @@ body {
     object-fit: #fff;
 }
 
-/* Controles da transmissão */
 #stream-controls-wrapper {
     background-color: transparent;
     border: none;
@@ -247,8 +246,7 @@ button {
     font-weight: bold;
     color: #ffffff; 
 }
-/* Quando o áudio é detectado, a borda será verde */
 .video-container.active {
-    border: 3px solid rgb(45, 211, 45); /* Borda verde ao falar */
+    border: 3px solid rgb(45, 211, 45); 
 }
-
+  
