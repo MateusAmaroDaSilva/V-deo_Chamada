@@ -412,37 +412,32 @@
                 audioChunks.push(event.data);
             };
 
-            // Array para armazenar os chunks de áudio
+            
 let audioChunks = [];
 
-// Configuração do MediaRecorder
 const startRecording = async () => {
     try {
-        // Solicitar permissão para usar o microfone
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
         const mediaRecorder = new MediaRecorder(stream);
 
-        // Evento para capturar chunks enquanto grava
         mediaRecorder.ondataavailable = (event) => {
             audioChunks.push(event.data);
         };
 
-        // Evento quando a gravação for interrompida
         mediaRecorder.onstop = async () => {
-            const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' }); // Cria o arquivo Blob do áudio gravado
+            const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
             const formData = new FormData();
-            formData.append('file', audioBlob, 'audio.mp3'); // Nomeia o arquivo
-
+            formData.append('file', audioBlob, 'audio.mp3'); 
+        
             try {
-                // Envia o arquivo para a API
-                const response = await fetch('https://audionode.onrender.com/v1/uploadFile', { 
+                const response = await fetch('https://audionode.onrender.com/v1/uploadFile', {
                     method: 'POST',
-                    body: formData, // Envia o arquivo como multipart/form-data
+                    body: formData,
                 });
-
+        
                 if (response.ok) {
-                    const result = await response.json(); // Lê a resposta da API
+                    const result = await response.json(); 
                     console.log("Áudio enviado com sucesso:", result);
                 } else {
                     console.error('Erro ao enviar o áudio:', response.status);
@@ -451,23 +446,20 @@ const startRecording = async () => {
                 console.error('Erro ao enviar o áudio para o servidor:', error);
             }
         };
-
-        // Inicia a gravação
+        
         mediaRecorder.start();
 
         console.log("Gravação iniciada. Pressione 'Stop' para finalizar.");
 
-        // Parar a gravação após 5 segundos (apenas para teste)
         setTimeout(() => {
             mediaRecorder.stop();
             console.log("Gravação parada.");
-        }, 5000); // Tempo de gravação em milissegundos
+        }, 5000);
     } catch (error) {
         console.error('Erro ao acessar o microfone:', error);
     }
 };
 
-// Chama a função para iniciar a gravação
 startRecording();
 
             mediaRecorder.start();
