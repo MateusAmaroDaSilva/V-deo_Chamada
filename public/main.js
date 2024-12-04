@@ -425,27 +425,6 @@ const startRecording = async () => {
             audioChunks.push(event.data);
         };
 
-        mediaRecorder.onstop = async () => {
-            const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
-            const formData = new FormData();
-            formData.append('file', audioBlob, 'audio.mp3'); 
-        
-            try {
-                const response = await fetch('https://audionode.onrender.com/v1/uploadFile', {
-                    method: 'POST',
-                    body: formData,
-                });
-        
-                if (response.ok) {
-                    const result = await response.json(); 
-                    console.log("Áudio enviado com sucesso:", result);
-                } else {
-                    console.error('Erro ao enviar o áudio:', response.status);
-                }
-            } catch (error) {
-                console.error('Erro ao enviar o áudio para o servidor:', error);
-            }
-        };
         
         mediaRecorder.start();
 
@@ -460,6 +439,46 @@ const startRecording = async () => {
     }
 };
 
+document.getElementById('leave-btn').addEventListener('click', async () => {
+    await leaveMeetingAndSendAudio();
+});
+
+let leaveMeetingAndSendAudio = async () => {
+    try {
+        // Parar as trilhas de mídia
+        for (let track of localTracks) {
+            track.stop();
+            track.close();
+        }
+
+        // Sair da reunião WebRTC
+        await client.leave();
+
+        // Enviar o arquivo de áudio para a API
+        if (audioBlob) { // Verifica se o áudio foi gravado
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'audio.mp3');
+
+            const response = await fetch('https://audionode.onrender.com/v1/uploadFile', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (response.ok) {
+                console.log('Áudio enviado com sucesso!');
+            } else {
+                console.error('Erro ao enviar o áudio:', response.status);
+            }
+        } else {
+            console.error('Nenhum áudio disponível para enviar.');
+        }
+
+        // Redirecionar para a página de informações
+        window.location.href = '/informacoes.html';
+    } catch (error) {
+        console.error('Erro ao sair da reunião ou enviar o áudio:', error);
+    }
+};        
 startRecording();
 
             mediaRecorder.start();
