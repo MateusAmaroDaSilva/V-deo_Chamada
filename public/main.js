@@ -11,7 +11,7 @@
 
     let mediaRecorder;
     let audioChunks = [];
-
+    
 
     let lastTranscriptionTime = 0;
     const transcriptionInterval = 10000; 

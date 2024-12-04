@@ -37,6 +37,15 @@
     <button class="meeting-summary-button">Sair</button>
   </div>
   <script>
+
+    const name = localStorage.getItem('name');
+
+    if (reunionName) {
+        document.getElementById('meeting-title').value = name;
+    } else {
+        document.getElementById('meeting-title').value = "Reunião sem título";
+    }
+
 function toggleExclusiveSelection(button, color) {
 
   const buttons = document.querySelectorAll('.save-button, .no-save-button');

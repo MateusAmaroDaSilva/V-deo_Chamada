@@ -9,29 +9,20 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
-        origin: '*',
+        origin: '*', 
         methods: ['GET', 'POST']
     }
 });
 
-// Configurações de middleware
-app.use(express.json());
+app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public')));    
 
-// Verifica ou cria a pasta de áudio
-const audioDir = path.join(__dirname, 'audio');
-if (!fs.existsSync(audioDir)) {
-    fs.mkdirSync(audioDir);
-}
-
-// Configuração do multer para salvar arquivos de áudio
+// Configuração do Multer para salvar arquivos temporariamente na pasta "audio/"
 const upload = multer({ dest: 'audio/' });
 
-// Variável para armazenar as reuniões
 let meetings = [];
 
-// Middleware de CORS
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
@@ -39,35 +30,32 @@ app.use((req, res, next) => {
     next();
 });
 
-// Rotas principais
-
-// Página inicial
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'reuniao.html'));
 });
 
-// Criar reunião
 app.post('/create-meeting', (req, res) => {
     const { name } = req.body;
 
     if (!name) {
-        return res.status(400).json({ error: 'Nome da reunião é obrigatório.' });
+        return res.status(400).json({ error: 'Nome da reunião é obrigatório' });
     }
 
-    const meetingId = Date.now().toString(); // Gera um ID único com base no timestamp
+    const meetingId = Date.now().toString(); 
     const meeting = { id: meetingId, name, participants: [] };
     meetings.push(meeting);
 
-    io.emit('new-meeting', meeting); // Notifica todos os clientes sobre a nova reunião
+    console.log('Reuniões ativas:', meetings); 
+
+    io.emit('new-meeting', meeting);
     res.json({ success: true, meeting });
 });
 
-// Listar reuniões
 app.get('/meetings', (req, res) => {
-    res.json(meetings);
+    console.log('Enviando reuniões:', meetings);
+    res.json(meetings); 
 });
 
-// Entrar em uma reunião
 app.post('/join-meeting/:id', (req, res) => {
     const { id } = req.params;
     const meeting = meetings.find((m) => m.id === id);
@@ -75,19 +63,19 @@ app.post('/join-meeting/:id', (req, res) => {
     if (meeting) {
         res.json({ success: true, meetingId: id });
     } else {
-        res.status(404).json({ error: 'Reunião não encontrada.' });
+        res.status(404).json({ error: 'Reunião não encontrada' });
     }
 });
 
-// Salvar áudio
+// Nova rota para salvar áudio na pasta "audio"
 app.post('/save-audio', upload.single('audio'), (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ error: 'Nenhum arquivo enviado.' });
         }
 
-        const tempPath = req.file.path;
-        const finalPath = path.join(audioDir, req.file.originalname);
+        const tempPath = req.file.path; // Caminho temporário gerado pelo multer
+        const finalPath = `audio/${req.file.originalname}`; // Nome final na pasta "audio"
 
         fs.rename(tempPath, finalPath, (err) => {
             if (err) {
@@ -95,7 +83,7 @@ app.post('/save-audio', upload.single('audio'), (req, res) => {
                 return res.status(500).json({ error: 'Erro ao salvar o arquivo de áudio.' });
             }
 
-            console.log(`Áudio salvo com sucesso: ${finalPath}`);
+            console.log(`Áudio salvo com sucesso em: ${finalPath}`);
             res.json({ success: true, message: 'Áudio salvo com sucesso!', path: finalPath });
         });
     } catch (error) {
@@ -104,19 +92,16 @@ app.post('/save-audio', upload.single('audio'), (req, res) => {
     }
 });
 
-// Eventos do Socket.IO
 io.on('connection', (socket) => {
     console.log(`Novo cliente conectado: ${socket.id}`);
 
-    // Entrar em uma reunião
     socket.on('join-meeting', (meetingId) => {
-        socket.join(meetingId);
-        io.to(meetingId).emit('user-joined', socket.id);
+        socket.join(meetingId); 
+        io.to(meetingId).emit('user-joined', socket.id); 
     });
 
-    // Temporizador sincronizado
     socket.on('start-timer', (meetingId, startTime) => {
-        io.to(meetingId).emit('update-timer', startTime);
+        io.to(meetingId).emit('update-timer', startTime); 
     });
 
     socket.on('disconnect', () => {
@@ -124,13 +109,6 @@ io.on('connection', (socket) => {
     });
 });
 
-// Tratamento global de erros
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ error: 'Ocorreu um erro no servidor.' });
-});
-
-// Inicialização do servidor
 const PORT = 3000;
 server.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
