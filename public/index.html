@@ -63,47 +63,64 @@
     <script src="main.js"></script>
     
     <script>
-        document.getElementById('leave-btn').addEventListener('click', async () => {
-            await leaveMeetingAndSaveAudio();
+        let audioChunks = [];
+let mediaRecorder;
+
+async function startRecording() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+
+        mediaRecorder.ondataavailable = (event) => {
+            audioChunks.push(event.data);
+        };
+
+        mediaRecorder.onstop = () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+            const audioUrl = URL.createObjectURL(audioBlob);
+            // Enviar o áudio para o servidor
+            sendAudioToServer(audioBlob);
+        };
+
+        mediaRecorder.start();
+        console.log("Gravação iniciada.");
+    } catch (error) {
+        console.error('Erro ao acessar o microfone:', error);
+    }
+}
+
+async function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+        mediaRecorder.stop();
+        console.log("Gravação parada.");
+    }
+}
+
+async function sendAudioToServer(audioBlob) {
+    const formData = new FormData();
+    formData.append('audio', audioBlob, 'audio_gravado.wav');
+
+    try {
+        const response = await fetch('/upload-audio', {
+            method: 'POST',
+            body: formData
         });
-        
-        async function leaveMeetingAndSaveAudio() {
-            try {
-                // Parar as trilhas de mídia (caso esteja usando WebRTC)
-                for (let track of localTracks) {
-                    track.stop();
-                    track.close();
-                }
-        
-                // Sair da reunião WebRTC
-                await client.leave();
-        
-                // Verifica se há áudio gravado e envia para o servidor
-                if (audioBlob) {
-                    const formData = new FormData();
-                    formData.append('audio', audioBlob, 'audio.mp3');
-        
-                    const response = await fetch('http://localhost:3000/save-audio', {
-                        method: 'POST',
-                        body: formData,
-                    });
-        
-                    if (response.ok) {
-                        const result = await response.json();
-                        console.log('Áudio enviado e salvo com sucesso:', result.message);
-                    } else {
-                        console.error('Erro ao salvar o áudio:', response.status);
-                    }
-                } else {
-                    console.error('Nenhum áudio gravado disponível para envio.');
-                }
-        
-                // Redirecionar para a página de informações
-                window.location.href = '/informacoes.html';
-            } catch (error) {
-                console.error('Erro ao sair da reunião ou salvar áudio:', error);
-            }
-        }        
+
+        if (response.ok) {
+            console.log('Áudio enviado com sucesso para o servidor.');
+        } else {
+            console.error('Erro ao enviar o áudio para o servidor.');
+        }
+    } catch (error) {
+        console.error('Erro na requisição para enviar o áudio:', error);
+    }
+}
+
+// Chamando a função de gravação ao sair da reunião
+async function leaveMeeting() {
+    await stopRecording();
+    // Lógica para deixar a reunião...
+}      
     </script>
 </body>
 </html>

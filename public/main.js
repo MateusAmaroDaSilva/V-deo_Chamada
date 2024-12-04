@@ -413,30 +413,53 @@
             };
 
             
-let audioChunks = [];
-
-const startRecording = async () => {
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-        const mediaRecorder = new MediaRecorder(stream);
-
-        mediaRecorder.ondataavailable = (event) => {
-            audioChunks.push(event.data);
-        };
-
-        mediaRecorder.start();
-
-        console.log("Gravação iniciada. Pressione 'Stop' para finalizar.");
-
-        setTimeout(() => {
-            mediaRecorder.stop();
-            console.log("Gravação parada.");
-        }, 5000);
-    } catch (error) {
-        console.error('Erro ao acessar o microfone:', error);
-    }
-};
+            let audioChunks = [];
+            const startRecording = async () => {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            
+                    mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.ondataavailable = (event) => {
+                        audioChunks.push(event.data); 
+                    };
+            
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        sendAudioToServer(audioBlob);
+                    };
+            
+                    mediaRecorder.start();
+                    console.log("Gravação iniciada.");
+            
+                    setTimeout(() => {
+                        mediaRecorder.stop();
+                        console.log("Gravação parada.");
+                    }, 5000);  
+                } catch (error) {
+                    console.error('Erro ao acessar o microfone:', error);
+                }
+            };
+            
+            const sendAudioToServer = async (audioBlob) => {
+                const formData = new FormData();
+                formData.append('audio', audioBlob, 'audio.wav');
+            
+                try {
+                    const response = await fetch('(https://audionode.onrender.com/v1/uploadFile', {
+                        method: 'POST',
+                        body: formData,
+                    });
+            
+                    if (response.ok) {
+                        console.log('Áudio enviado com sucesso!');
+                        alert("Áudio enviado com sucesso!");
+                    } else {
+                        console.error('Erro ao enviar o áudio:', response.status);
+                    }
+                } catch (error) {
+                    console.error('Erro ao enviar o áudio:', error);
+                }
+            };
 
             mediaRecorder.start();
             console.log("Gravação de áudio iniciada.");
