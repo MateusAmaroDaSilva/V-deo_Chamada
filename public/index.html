@@ -121,6 +121,28 @@ async function leaveMeeting() {
     await stopRecording();
     // Lógica para deixar a reunião...
 }      
+
+
+const token = localStorage.getItem('token');
+
+        if (!token || token === null) {
+            window.location.href = 'not_auth.html'; // Redireciona se não houver token
+        } else {
+            fetch('https://api-authetication-jwt.onrender.com/protected', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}` // Usa o token no formato correto
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Você não está autorizado a acessar esta página.');
+                } else {
+                    console.log(response.status, 'Logado')
+                }
+                return response.json();
+            });
+        }
     </script>
 </body>
 </html>
