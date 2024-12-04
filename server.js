@@ -1,6 +1,5 @@
 const express = require('express');
 const multer = require('multer');
-const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
@@ -19,6 +18,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));    
 
+// Configuração do Multer para salvar arquivos temporariamente na pasta "audio/"
 const upload = multer({ dest: 'audio/' });
 
 let meetings = [];
@@ -67,57 +67,28 @@ app.post('/join-meeting/:id', (req, res) => {
     }
 });
 
-app.post('/transcribe', upload.single('audio'), async (req, res) => {
+// Nova rota para salvar áudio na pasta "audio"
+app.post('/save-audio', upload.single('audio'), (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ error: 'Nenhum arquivo enviado.' });
         }
 
-        const audioPath = req.file.path;
-        const newAudioPath = `audio/${req.file.filename}${path.extname(req.file.originalname)}`;
+        const tempPath = req.file.path; // Caminho temporário gerado pelo multer
+        const finalPath = `audio/${req.file.originalname}`; // Nome final na pasta "audio"
 
-        fs.rename(audioPath, newAudioPath, (err) => {
+        fs.rename(tempPath, finalPath, (err) => {
             if (err) {
-                console.error(`Erro ao renomear arquivo: ${err}`);
-                return res.status(500).json({ error: 'Erro ao processar o arquivo de áudio.' });
+                console.error(`Erro ao mover o arquivo: ${err}`);
+                return res.status(500).json({ error: 'Erro ao salvar o arquivo de áudio.' });
             }
 
-            let transcriptionResult = '';
-
-            const pythonProcess = spawn('python', ['transcricao.py', newAudioPath]);
-
-            pythonProcess.stdout.on('data', (data) => {
-                const text = data.toString('utf-8');
-                transcriptionResult += text;
-
-                io.emit('transcription', text);
-            });
-
-            pythonProcess.stderr.on('data', (data) => {
-                console.error(`Erro no script Python: ${data}`);
-            });
-
-            pythonProcess.on('close', (code) => {
-                if (code === 0) {
-                    fs.writeFile('transcricao.txt', transcriptionResult, 'utf-8', (err) => {
-                        if (err) {
-                            console.error('Erro ao salvar a transcrição:', err);
-                            return res.status(500).json({ error: 'Erro ao salvar a transcrição' });
-                        }
-                        res.json({ text: transcriptionResult });
-                    });
-                } else {
-                    res.status(500).json({ error: 'Erro na transcrição.' });
-                }
-
-                fs.unlink(newAudioPath, (err) => {
-                    if (err) console.error(`Erro ao deletar o arquivo: ${err}`);
-                });
-            });
+            console.log(`Áudio salvo com sucesso em: ${finalPath}`);
+            res.json({ success: true, message: 'Áudio salvo com sucesso!', path: finalPath });
         });
     } catch (error) {
-        console.error('Erro ao processar a transcrição:', error);
-        res.status(500).json({ error: 'Erro ao processar a transcrição.' });
+        console.error('Erro ao processar o arquivo de áudio:', error);
+        res.status(500).json({ error: 'Erro ao processar o arquivo.' });
     }
 });
 

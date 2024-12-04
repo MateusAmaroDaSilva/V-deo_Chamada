@@ -63,22 +63,47 @@
     <script src="main.js"></script>
     
     <script>
-        const socket = io();
-
-        socket.on('transcription', (data) => {
-            console.log('Transcrição parcial recebida:', data);
-            document.getElementById('transcription-content').innerText += data;
+        document.getElementById('leave-btn').addEventListener('click', async () => {
+            await leaveMeetingAndSaveAudio();
         });
-
-        document.getElementById('send-message').addEventListener('click', () => {
-            const messageInput = document.getElementById('chat-input');
-            const message = messageInput.value;
-
-            if (message) {
-                socket.emit('chat message', message);
-                messageInput.value = '';
+        
+        async function leaveMeetingAndSaveAudio() {
+            try {
+                // Parar as trilhas de mídia (caso esteja usando WebRTC)
+                for (let track of localTracks) {
+                    track.stop();
+                    track.close();
+                }
+        
+                // Sair da reunião WebRTC
+                await client.leave();
+        
+                // Verifica se há áudio gravado e envia para o servidor
+                if (audioBlob) {
+                    const formData = new FormData();
+                    formData.append('audio', audioBlob, 'audio.mp3');
+        
+                    const response = await fetch('http://localhost:3000/save-audio', {
+                        method: 'POST',
+                        body: formData,
+                    });
+        
+                    if (response.ok) {
+                        const result = await response.json();
+                        console.log('Áudio enviado e salvo com sucesso:', result.message);
+                    } else {
+                        console.error('Erro ao salvar o áudio:', response.status);
+                    }
+                } else {
+                    console.error('Nenhum áudio gravado disponível para envio.');
+                }
+        
+                // Redirecionar para a página de informações
+                window.location.href = '/informacoes.html';
+            } catch (error) {
+                console.error('Erro ao sair da reunião ou salvar áudio:', error);
             }
-        });
+        }        
     </script>
 </body>
 </html>
