@@ -1,115 +1,79 @@
-const express = require('express');
-const multer = require('multer');
-const fs = require('fs');
-const path = require('path');
-const http = require('http');
-const socketIo = require('socket.io');
-
+const express = require("express");
+const fs = require("fs");
+const path = require("path");
+const record = require("node-record-lpcm16"); 
 const app = express();
-const server = http.createServer(app);
-const io = socketIo(server, {
-    cors: {
-        origin: '*', 
-        methods: ['GET', 'POST']
-    }
-});
+const port = 3000;
 
-app.use(express.json()); 
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));    
+let recordingProcess = null;
 
-// Configuração do Multer para salvar arquivos temporariamente na pasta "audio/"
-const upload = multer({ dest: 'audio/' });
+const audioFolder = path.join(__dirname, "audio"); 
 
-let meetings = [];
+if (!fs.existsSync(audioFolder)) {
+  fs.mkdirSync(audioFolder, { recursive: true });
+  console.log("Pasta 'audio' criada.");
+}
 
-app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    next();
-});
+const logError = (context, error) => {
+  console.error(`[${context}]`, error.message || error);
+};
 
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'reuniao.html'));
-});
-
-app.post('/create-meeting', (req, res) => {
-    const { name } = req.body;
-
-    if (!name) {
-        return res.status(400).json({ error: 'Nome da reunião é obrigatório' });
+app.get("/start-recording", (req, res) => {
+  try {
+    if (recordingProcess) {
+      return res.status(400).json({ message: "Já existe uma gravação em andamento." });
     }
 
-    const meetingId = Date.now().toString(); 
-    const meeting = { id: meetingId, name, participants: [] };
-    meetings.push(meeting);
+    const fileName = `audio_${Date.now()}.wav`; 
+    const filePath = path.join(audioFolder, fileName); 
 
-    console.log('Reuniões ativas:', meetings); 
+    console.log(`Iniciando gravação: ${filePath}`);
 
-    io.emit('new-meeting', meeting);
-    res.json({ success: true, meeting });
+    const stream = fs.createWriteStream(filePath);
+    recordingProcess = record
+      .start({
+        sampleRateHertz: 16000,
+        threshold: 0, 
+        silence: 0, 
+      })
+      .on("error", (err) => logError("Erro durante a gravação", err))
+      .pipe(stream);
+
+    stream.on("finish", () => console.log(`Gravação salva: ${filePath}`));
+    stream.on("error", (err) => logError("Erro ao salvar o arquivo", err));
+
+    res.json({ message: "Gravação iniciada!", filePath });
+  } catch (err) {
+    logError("Erro ao iniciar a gravação", err);
+    res.status(500).json({ message: "Erro ao iniciar a gravação.", error: err.message });
+  }
 });
 
-app.get('/meetings', (req, res) => {
-    console.log('Enviando reuniões:', meetings);
-    res.json(meetings); 
-});
-
-app.post('/join-meeting/:id', (req, res) => {
-    const { id } = req.params;
-    const meeting = meetings.find((m) => m.id === id);
-
-    if (meeting) {
-        res.json({ success: true, meetingId: id });
-    } else {
-        res.status(404).json({ error: 'Reunião não encontrada' });
+app.get("/stop-recording", (req, res) => {
+  try {
+    if (!recordingProcess) {
+      return res.status(400).json({ message: "Nenhuma gravação em andamento." });
     }
+
+    recordingProcess.stop();
+    recordingProcess = null;
+    res.json({ message: "Gravação parada e salva." });
+  } catch (err) {
+    logError("Erro ao parar a gravação", err);
+    res.status(500).json({ message: "Erro ao parar a gravação.", error: err.message });
+  }
 });
 
-// Nova rota para salvar áudio na pasta "audio"
-app.post('/save-audio', upload.single('audio'), (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ error: 'Nenhum arquivo enviado.' });
-        }
-
-        const tempPath = req.file.path; // Caminho temporário gerado pelo multer
-        const finalPath = `audio/${req.file.originalname}`; // Nome final na pasta "audio"
-
-        fs.rename(tempPath, finalPath, (err) => {
-            if (err) {
-                console.error(`Erro ao mover o arquivo: ${err}`);
-                return res.status(500).json({ error: 'Erro ao salvar o arquivo de áudio.' });
-            }
-
-            console.log(`Áudio salvo com sucesso em: ${finalPath}`);
-            res.json({ success: true, message: 'Áudio salvo com sucesso!', path: finalPath });
-        });
-    } catch (error) {
-        console.error('Erro ao processar o arquivo de áudio:', error);
-        res.status(500).json({ error: 'Erro ao processar o arquivo.' });
-    }
+app.get("/", (req, res) => {
+  const indexPath = path.join(__dirname, "public", "reuniao.html");
+  if (!fs.existsSync(indexPath)) {
+    return res.status(404).send("Arquivo reuniao.html não encontrado.");
+  }
+  res.sendFile(indexPath);
 });
 
-io.on('connection', (socket) => {
-    console.log(`Novo cliente conectado: ${socket.id}`);
+app.use(express.static(path.join(__dirname, "public")));
 
-    socket.on('join-meeting', (meetingId) => {
-        socket.join(meetingId); 
-        io.to(meetingId).emit('user-joined', socket.id); 
-    });
-
-    socket.on('start-timer', (meetingId, startTime) => {
-        io.to(meetingId).emit('update-timer', startTime); 
-    });
-
-    socket.on('disconnect', () => {
-        console.log(`Cliente desconectado: ${socket.id}`);
-    });
-});
-
-const PORT = 3000;
-server.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
+app.listen(port, () => {
+  console.log(`Servidor rodando na porta ${port}`);
 });

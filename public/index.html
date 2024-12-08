@@ -6,9 +6,8 @@
     <title>Projeto Chamadas</title>
     <link rel="stylesheet" type="text/css" media="screen" href="main.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=phone_disabled" />
-        <script type="module" src="https://unpkg.com/ionicons@6.0.0/dist/ionicons/ionicons.esm.js"></script>
-        <script nomodule src="https://unpkg.com/ionicons@6.0.0/dist/ionicons/ionicons.js"></script>
-    
+    <script type="module" src="https://unpkg.com/ionicons@6.0.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@6.0.0/dist/ionicons/ionicons.js"></script>
 </head>
 <body>
 
@@ -27,26 +26,20 @@
     </header>
 
     <button id="join-btn">Começar</button>
-    
 
     <div id="stream-wrapper" style="display: none;">
-        
         <div id="video-streams">
-            
             <div class="video-container" id="user-container-${UID}">
-                
                 <video id="user-video-${UID}" autoplay playsinline></video>
-                
             </div>
         </div>
     </div>    
 
-        <div id="stream-controls-wrapper" style="display: none;">
-            <button id="leave-btn"><ion-icon name="power-outline"></ion-icon></button>
-            <button id="mic-btn"><ion-icon name="mic-outline"></ion-icon></button>
-            <button id="camera-btn"><ion-icon name="videocam-outline"></ion-icon></button>
-            <button id="screen-btn"><ion-icon name="desktop-outline"></ion-icon></button>
-        </div>
+    <div id="stream-controls-wrapper" style="display: none;">
+        <button id="leave-btn"><ion-icon name="power-outline"></ion-icon></button>
+        <button id="mic-btn"><ion-icon name="mic-outline"></ion-icon></button>
+        <button id="camera-btn"><ion-icon name="videocam-outline"></ion-icon></button>
+        <button id="screen-btn"><ion-icon name="desktop-outline"></ion-icon></button>
     </div>
 
     <div id="chat-wrapper" style="display: none;">
@@ -63,86 +56,17 @@
     <script src="main.js"></script>
     
     <script>
-        let audioChunks = [];
-let mediaRecorder;
-
-async function startRecording() {
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
-
-        mediaRecorder.ondataavailable = (event) => {
-            audioChunks.push(event.data);
-        };
-
-        mediaRecorder.onstop = () => {
-            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-            const audioUrl = URL.createObjectURL(audioBlob);
-            // Enviar o áudio para o servidor
-            sendAudioToServer(audioBlob);
-        };
-
-        mediaRecorder.start();
-        console.log("Gravação iniciada.");
-    } catch (error) {
-        console.error('Erro ao acessar o microfone:', error);
-    }
-}
-
-async function stopRecording() {
-    if (mediaRecorder && mediaRecorder.state === "recording") {
-        mediaRecorder.stop();
-        console.log("Gravação parada.");
-    }
-}
-
-async function sendAudioToServer(audioBlob) {
-    const formData = new FormData();
-    formData.append('audio', audioBlob, 'audio_gravado.wav');
-
-    try {
-        const response = await fetch('/upload-audio', {
-            method: 'POST',
-            body: formData
+        document.getElementById('join-btn').addEventListener('click', () => {
+            fetch('http://localhost:3000/start-recording')
+                .then(response => response.json())
+                .then(data => console.log(data.message));
         });
 
-        if (response.ok) {
-            console.log('Áudio enviado com sucesso para o servidor.');
-        } else {
-            console.error('Erro ao enviar o áudio para o servidor.');
-        }
-    } catch (error) {
-        console.error('Erro na requisição para enviar o áudio:', error);
-    }
-}
-
-// Chamando a função de gravação ao sair da reunião
-async function leaveMeeting() {
-    await stopRecording();
-    // Lógica para deixar a reunião...
-}      
-
-
-const token = localStorage.getItem('token');
-
-        if (!token || token === null) {
-            window.location.href = 'not_auth.html'; // Redireciona se não houver token
-        } else {
-            fetch('https://api-authetication-jwt.onrender.com/protected', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}` // Usa o token no formato correto
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Você não está autorizado a acessar esta página.');
-                } else {
-                    console.log(response.status, 'Logado')
-                }
-                return response.json();
-            });
-        }
+        document.getElementById('leave-btn').addEventListener('click', () => {
+            fetch('http://localhost:3000/stop-recording')
+                .then(response => response.json())
+                .then(data => console.log(data.message));
+        });
     </script>
 </body>
 </html>

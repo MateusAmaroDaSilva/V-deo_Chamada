@@ -1,5 +1,5 @@
     const APP_ID = "d291ead6adcc4b4891447c361347f199";
-    const TOKEN = "007eJxTYMi65P/o/+31a2cn905PmH/6+OW91dPbH/cFxYYwVm32/hGkwJBiZGmYmphilpiSnGySZGJhaWhiYp5sbGZobGKeZmhpuTcsIL0hkJEhU5qDhZEBAkF8VoayzJTUfAYGAG0UIa8=";
+    const TOKEN = "007eJxTYHDSXFo8wy0rRe7A2vsBu3T9zp7+v47TwO5l+StLPuGlfTEKDClGloapiSlmiSnJySZJJhaWhiYm5snGZobGJuZphpaWyqdC0hsCGRlcDtuxMjJAIIjPylCWmZKaz8AAADEfHp4=";
     const CHANNEL = "video";
 
     const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
@@ -11,10 +11,6 @@
 
     let mediaRecorder;
     let audioChunks = [];
-    
-
-    let lastTranscriptionTime = 0;
-    const transcriptionInterval = 10000; 
 
     const socket = io('https://video-chamada-r6rl.onrender.com/'); 
 
@@ -23,8 +19,6 @@
         currentUser = name;
         console.log(`Seu nome é ${currentUser}`);
     });
-
-    let transcriptionContent = document.getElementById('transcription-content');
 
     function updateMeetingDate() {
         const dateElement = document.getElementById('meeting-date');

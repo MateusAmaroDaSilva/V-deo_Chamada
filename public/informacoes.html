@@ -28,83 +28,21 @@
       </div>
     </div>
     
-    <div class="save-transcription-container">
-      <p>Gostaria que Transcrevemos sua reunião??</p>
-      <button class="save-button" onclick="toggleExclusiveSelection(this, 'green')">Salvar</button>
-      <button class="no-save-button" onclick="toggleExclusiveSelection(this, 'red')">Não Salvar</button>
-    </div>
-
-    <button class="meeting-summary-button">Sair</button>
+    <button class="meeting-summary-button" id="exit-btn">Sair</button>
   </div>
+  
   <script>
-
     const name = localStorage.getItem('name');
 
-    if (reunionName) {
+    if (name) {
         document.getElementById('meeting-title').value = name;
     } else {
         document.getElementById('meeting-title').value = "Reunião sem título";
     }
 
-function toggleExclusiveSelection(button, color) {
-
-  const buttons = document.querySelectorAll('.save-button, .no-save-button');
-
-  if (button.classList.contains('selected')) {
-    button.classList.remove('selected');
-    button.style.backgroundColor = '#3a3a3a'; 
-    button.style.color = 'white';
-  } else {
-   
-    buttons.forEach(btn => {
-      btn.classList.remove('selected');
-      btn.style.backgroundColor = '#3a3a3a'; 
-      btn.style.color = 'white';
+    document.getElementById('exit-btn').addEventListener('click', () => {
+      window.location.href = '/';
     });
-
-    button.classList.add('selected');
-    button.style.backgroundColor = color; 
-    button.style.color = 'white';
-  }
-}
-
- document.getElementById('save-btn').addEventListener('click', async () => {
-  try {
-      const response = await fetch('/download-transcription', {
-          method: 'GET',
-          headers: {
-              'Content-Type': 'application/json'
-          }
-      });
-
-      if (response.ok) {
-          const fileBlob = await response.blob();
-          const formData = new FormData();
-          formData.append('file', fileBlob, 'transcricao.txt');
-
-          const uploadResponse = await fetch('https://audionode.onrender.com/v1/uploadFile', {
-              method: 'POST',
-              body: formData
-          });
-
-          if (uploadResponse.ok) {
-              const result = await uploadResponse.json();
-              console.log("Arquivo enviado com sucesso:", result);
-              alert("Transcrição salva com sucesso!");
-          } else {
-              console.error('Erro ao enviar o arquivo para o servidor externo:', uploadResponse.status);
-          }
-      } else {
-          console.error('Erro ao acessar o arquivo de transcrição:', response.status);
-      }
-  } catch (error) {
-      console.error('Erro ao enviar a transcrição:', error);
-  }
-});
-
-document.getElementById('exit-btn').addEventListener('click', () => {
-  window.location.href = '/'; 
-});
   </script>
 </body>
 </html>
