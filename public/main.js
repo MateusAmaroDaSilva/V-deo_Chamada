@@ -1,5 +1,5 @@
     const APP_ID = "d291ead6adcc4b4891447c361347f199";
-    const TOKEN = "007eJxTYDhWHZgdv26Lxvv2oh/C8h1sMcpmna/PcM7/1lqyve7TUU4FhhQjS8PUxBSzxJTkZJMkEwtLQxMT82RjM0NjE/M0Q0vLJTUx6Q2BjAzuIl5MjAwQCOKzMpRlpqTmMzAAAHVlHzA=";
+    const TOKEN = "007eJxTYPhUt6FG8096iLhu3Kyqe6bpYTWR3HW/YlQrth5S+d/EkqHAkGJkaZiamGKWmJKcbJJkYmFpaGJinmxsZmhsYp5maGnZsS82vSGQkcEtuIiFkQECQXxWhrLMlNR8BgYAMBIekw==";
     const CHANNEL = "video";
 
     const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
@@ -139,9 +139,40 @@
     
         window.location.href = '/informacoes.html';
     };
-     
 
-    document.getElementById('leave-btn').addEventListener('click', leaveMeeting);    
+function startTimer() {
+    const timerDisplay = document.getElementById('meeting-timer');
+    let seconds = 0;
+
+    timerInterval = setInterval(() => {
+        seconds++;
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+
+        timerDisplay.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }, 1000); 
+}
+
+function stopTimer() {
+    clearInterval(timerInterval); 
+    const timerDisplay = document.getElementById('meeting-timer').textContent;
+    localStorage.setItem('meetingDuration', timerDisplay); 
+    console.log("Cronômetro parado. Tempo total:", timerDisplay);
+}
+
+document.getElementById('leave-btn').addEventListener('click', () => {
+    stopTimer(); 
+    leaveMeeting(); 
+});
+
+
+
+document.getElementById('leave-btn').addEventListener('click', () => {
+    stopTimer(); 
+    leaveMeeting(); 
+});
+ 
 
     const audioActivity = {};
 

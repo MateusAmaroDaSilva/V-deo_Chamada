@@ -27,18 +27,26 @@
         <input type="text" id="meeting-participants" class="meeting-summary-input" placeholder="" disabled>
       </div>
     </div>
-    
     <button class="meeting-summary-button" id="exit-btn">Sair</button>
   </div>
-  
+
   <script>
     const name = localStorage.getItem('name');
+    document.getElementById('meeting-title').value = name ? name : "Reunião sem título";
 
-    if (name) {
-        document.getElementById('meeting-title').value = name;
-    } else {
-        document.getElementById('meeting-title').value = "Reunião sem título";
-    }
+    const currentDate = new Date();
+    const formattedDate = currentDate.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+    document.getElementById('meeting-date').value = formattedDate;
+
+    const meetingDuration = localStorage.getItem('meetingDuration');
+    const meetingEndTime = localStorage.getItem('meetingEndTime');
+
+    document.getElementById('meeting-duration').value = meetingDuration ? meetingDuration : "00:00:00";
+    document.getElementById('meeting-end-time').value = meetingEndTime ? meetingEndTime : "N/A";
 
     document.getElementById('exit-btn').addEventListener('click', () => {
       window.location.href = '/';

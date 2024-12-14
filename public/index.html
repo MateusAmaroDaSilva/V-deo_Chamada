@@ -68,5 +68,48 @@
                 .then(data => console.log(data.message));
         });
     </script>
+    <script>
+        let timerInterval; 
+        let startTime; 
+      
+        function startTimer() {
+          startTime = new Date(); 
+          timerInterval = setInterval(() => {
+            const now = new Date();
+            const elapsed = new Date(now - startTime); 
+      
+            const hours = String(elapsed.getUTCHours()).padStart(2, '0');
+            const minutes = String(elapsed.getUTCMinutes()).padStart(2, '0');
+            const seconds = String(elapsed.getUTCSeconds()).padStart(2, '0');
+      
+            document.getElementById('meeting-timer').textContent = `${hours}:${minutes}:${seconds}`;
+          }, 1000);
+        }
+      
+        function stopTimer() {
+          clearInterval(timerInterval); 
+      
+          const now = new Date(); 
+          const duration = document.getElementById('meeting-timer').textContent;
+      
+          localStorage.setItem('meetingDuration', duration);
+          localStorage.setItem(
+            'meetingEndTime',
+            now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+          );
+        }
+      
+        document.getElementById('join-btn').addEventListener('click', () => {
+          document.getElementById('stream-wrapper').style.display = 'block'; 
+          document.getElementById('stream-controls-wrapper').style.display = 'block'; 
+          startTimer(); 
+        });
+      
+        document.getElementById('leave-btn').addEventListener('click', () => {
+          stopTimer(); 
+          window.location.href = 'informacoes.html'; 
+        });
+      </script>
+      
 </body>
 </html>
