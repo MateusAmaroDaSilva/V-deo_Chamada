@@ -1,7 +1,7 @@
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
-const record = require("node-record-lpcm16"); 
+const record = require("node-record-lpcm16");
 const ffmpeg = require("fluent-ffmpeg");
 const FormData = require("form-data");
 const axios = require("axios");
@@ -10,8 +10,7 @@ const app = express();
 const port = 3000;
 
 let recordingProcess = null;
-
-const audioFolder = path.join(__dirname, "audio"); 
+const audioFolder = path.join(__dirname, "audio");
 
 // Criar a pasta de áudio, se não existir
 if (!fs.existsSync(audioFolder)) {
@@ -24,7 +23,13 @@ const logError = (context, error) => {
   console.error(`[${context}]`, error.message || error);
 };
 
-// Rota para iniciar a gravação
+// Middleware para processar JSON
+app.use(express.json());
+
+// Array para armazenar as reuniões
+let meetings = [];
+
+// Rotas para gravação de áudio
 app.get("/start-recording", (req, res) => {
   try {
     if (recordingProcess) {
@@ -65,7 +70,6 @@ app.get("/start-recording", (req, res) => {
   }
 });
 
-// Rota para parar a gravação e enviar o arquivo gravado
 app.get("/stop-recording", async (req, res) => {
   try {
     if (!recordingProcess) {
@@ -75,39 +79,29 @@ app.get("/stop-recording", async (req, res) => {
     recordingProcess.stop();
     recordingProcess = null;
 
-    // Verifica se o arquivo MP3 foi gravado corretamente
     const filePath = path.join(audioFolder, "audio.mp3");
     if (fs.existsSync(filePath)) {
-      // Cria o FormData e adiciona o arquivo
       const form = new FormData();
       form.append("file", fs.createReadStream(filePath), {
-        filename: "audio.mp3", // O nome do arquivo a ser enviado
-        contentType: "audio/mp3", // Tipo de conteúdo
+        filename: "audio.mp3",
+        contentType: "audio/mp3",
       });
 
-      // Envia o arquivo para a API de transcrição
       try {
         const response = await axios.post(
           "https://audionode.onrender.com/v1/uploadFile",
           form,
-          {
-            headers: {
-              ...form.getHeaders(),
-            },
-          }
+          { headers: { ...form.getHeaders() } }
         );
 
         console.log("Resposta da API:", response.data);
 
-        // Retorna a resposta para o cliente
         res.json({
           message: "Gravação salva e enviada para transcrição.",
           apiResponse: response.data,
         });
 
-        // Exclui o arquivo local após o envio
         fs.unlinkSync(filePath);
-
       } catch (error) {
         logError("Erro ao enviar áudio para a API", error);
         res.status(500).json({ message: "Erro ao enviar áudio para a API", error: error.message });
@@ -119,6 +113,43 @@ app.get("/stop-recording", async (req, res) => {
     logError("Erro ao parar a gravação", err);
     res.status(500).json({ message: "Erro ao parar a gravação.", error: err.message });
   }
+});
+
+// Rotas para gerenciamento de reuniões
+app.post("/create-meeting", (req, res) => {
+  const { name } = req.body;
+  if (!name) {
+    return res.status(400).json({ error: "O nome da reunião é obrigatório." });
+  }
+
+  // Gerar reunião
+  const newMeeting = {
+    id: meetings.length + 1, // Se possível, substitua por um ID único, ex: uuidv4().
+    name,
+    createdAt: new Date(),
+  };
+
+  meetings.push(newMeeting); // Salva a reunião na lista
+  console.log(`Reunião criada: ${JSON.stringify(newMeeting)}`);
+
+  // Resposta no formato esperado pelo frontend
+  res.status(201).json({ success: true, meeting: newMeeting });
+});
+
+app.get("/meetings", (req, res) => {
+  res.json(meetings);
+});
+
+// Rota para buscar detalhes de uma reunião pelo ID
+app.get("/meeting/:id", (req, res) => {
+  const meetingId = parseInt(req.params.id);
+  const meeting = meetings.find((m) => m.id === meetingId);
+
+  if (!meeting) {
+    return res.status(404).json({ error: "Reunião não encontrada." });
+  }
+
+  res.json(meeting);
 });
 
 // Rota para o caminho raiz

@@ -138,6 +138,15 @@
         .status {
             margin-top: 5px;
         }
+
+        .details-tab {
+            display: flex;
+            flex-direction: column;
+            margin-top: 20px;
+            background-color: #444;
+            padding: 15px;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
@@ -148,9 +157,9 @@
 
     <p>Todas as chamadas abertas para um bate-papo mais interativo</p>
 
-    <div class="reunion-list" id="reunion-list">
-    </div>
+    <div class="reunion-list" id="reunion-list"></div>
 
+    <!-- Modal para criação de reunião -->
     <div class="modal" id="modal">
         <div class="modal-content">
             <h2>Criar Nova Reunião</h2>
@@ -187,12 +196,13 @@
                 </div>
                 <div class="timer" id="timer-${meeting.id}">00:00:00</div>
                 <div class="card-footer">
-                    <button class="btn" onclick="joinReunion('${meeting.id}')">Entrar</button>
+                    <button class="btn" onclick="window.location.href='index.html?id=${meeting.id}'">Entrar</button>
                 </div>
             `;
             reunionList.appendChild(reunionCard);
             startTimer(meeting.id);
-        };
+        };        
+        
 
         const startTimer = (meetingId) => {
             let seconds = 0;
@@ -269,29 +279,35 @@
                 alert('Por favor, insira um nome para a reunião.');
                 return;
             }
-
+        
             try {
                 const response = await fetch(`${baseUrl}/create-meeting`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ name })
+                    body: JSON.stringify({ name }),
                 });
-
+        
                 const data = await response.json();
-                if (data.success) {
-                    // Redireciona o criador para a página da reunião
+        
+                if (data.success && data.meeting && data.meeting.id) {
+                    // Armazena o nome da reunião, a duração e o horário de término no localStorage
+                    localStorage.setItem("nomeReuniao", name);
+                    localStorage.setItem("meetingDuration", "00:00:00"); // Exemplo de duração
+                    localStorage.setItem("meetingEndTime", "N/A"); // Horário de término, ajustar conforme necessário
+        
+                    // Redireciona para a página da reunião com o ID
                     window.location.href = `index.html?id=${data.meeting.id}`;
-
-                    // Abre a reunião em uma nova aba para outros usuários
-                    window.open(`reuniao.html?id=${data.meeting.id}`, '_blank');
+                } else {
+                    throw new Error('Resposta do servidor inválida.');
                 }
             } catch (error) {
                 console.error('Erro ao criar reunião:', error);
                 alert('Erro ao criar reunião!');
             }
         };
+        
     </script>
 </body>
 </html>

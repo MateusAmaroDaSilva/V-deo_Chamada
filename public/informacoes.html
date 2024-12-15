@@ -27,30 +27,34 @@
         <input type="text" id="meeting-participants" class="meeting-summary-input" placeholder="" disabled>
       </div>
     </div>
-    <button class="meeting-summary-button" id="exit-btn">Sair</button>
+    <button class="meeting-summary-button" id="exit-btn" onclick="window.location.href='https://talklog.com.br/'">Sair</button>
+
   </div>
 
   <script>
-    const name = localStorage.getItem('name');
-    document.getElementById('meeting-title').value = name ? name : "Reunião sem título";
+    // Espera até o DOM estar completamente carregado
+    document.addEventListener('DOMContentLoaded', () => {
+      // Recupera o nome da reunião do localStorage
+      const nomeReuniao = localStorage.getItem('nomeReuniao');
+      document.getElementById('meeting-title').value = nomeReuniao ? nomeReuniao : "Reunião sem título";
 
-    const currentDate = new Date();
-    const formattedDate = currentDate.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-    document.getElementById('meeting-date').value = formattedDate;
+      // Data atual formatada
+      const currentDate = new Date(); 
+      const formattedDate = currentDate.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+      document.getElementById('meeting-date').value = formattedDate;
 
-    const meetingDuration = localStorage.getItem('meetingDuration');
-    const meetingEndTime = localStorage.getItem('meetingEndTime');
+      // Recupera a duração da reunião e o horário de término do localStorage
+      const meetingDuration = localStorage.getItem('meetingDuration');
+      const meetingEndTime = localStorage.getItem('meetingEndTime');
 
-    document.getElementById('meeting-duration').value = meetingDuration ? meetingDuration : "00:00:00";
-    document.getElementById('meeting-end-time').value = meetingEndTime ? meetingEndTime : "N/A";
-
-    document.getElementById('exit-btn').addEventListener('click', () => {
-      window.location.href = '/';
+      document.getElementById('meeting-duration').value = meetingDuration ? meetingDuration : "00:00:00";
+      document.getElementById('meeting-end-time').value = meetingEndTime ? meetingEndTime : "N/A";
     });
   </script>
+
 </body>
 </html>
