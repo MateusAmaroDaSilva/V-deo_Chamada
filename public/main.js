@@ -14,6 +14,12 @@ let audioChunks = [];
 
 const socket = io('https://video-chamada-r6rl.onrender.com/'); 
 
+let currentUser = ''; // Valor padrão
+socket.on('user name', (name) => {
+    currentUser = name || 'Anônimo';
+    console.log(`Seu nome é ${currentUser}`);
+});
+
 
 socket.on('user name', (name) => {
     currentUser = name;
@@ -378,48 +384,14 @@ let toggleScreenShare = async (e) => {
     }
 };
 
-
 let sendMessage = async () => {
-    const token = localStorage.getItem('token'); // Obtém o token do localStorage
-
-    if (!token || token === null) {
-        window.location.href = 'not_auth.html'; // Redireciona se não houver token
-    } else {
-        // Verifica a autenticação do token
-        try {
-            const response = await fetch('https://api-authetication-jwt.onrender.com/protected', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}` // Envia o token na requisição
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Você não está autorizado a acessar esta página.');
-            }
-
-            // Se a autenticação for bem-sucedida, busca as informações do usuário
-            const userData = await response.json();
-            const name_user = userData.name;  // Nome de login do usuário
-            const avatar_url = userData.avatar_url;  // URL do avatar
-
-            // Obtém a mensagem digitada no chat
-            const messageInput = document.getElementById('chat-input');
-            const message = messageInput.value.trim();
-
-            if (message !== '') {
-                // Formata a mensagem para incluir o avatar e o nome de login
-                const formattedMessage = `<img src="${avatar_url}" width="25px"> ${name_user}: ${message}`;
-
-                // Emite a mensagem para o servidor
-                socket.emit('chat message', formattedMessage);
-
-                // Limpa o campo de input
-                messageInput.value = '';
-            }
-        } catch (error) {
-            console.error('Erro na requisição:', error.message);
-        }
+    const messageInput = document.getElementById('chat-input');
+    const message = messageInput.value.trim();
+    if (message !== '') {
+        const userName = currentUser || 'Anônimo';
+        const formattedMessage = `${userName}: ${message}`;
+        socket.emit('chat message', formattedMessage);  // Envia mensagem para o servidor
+        messageInput.value = '';
     }
 };
 
