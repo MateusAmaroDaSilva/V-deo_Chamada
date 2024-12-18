@@ -1,5 +1,5 @@
 const APP_ID = "d291ead6adcc4b4891447c361347f199";
-const TOKEN = "007eJxTYNAJmqjV8KQgN7Ncd8YLp97dymdfi54yWCF72+qo/Nk4ZT4FhhQjS8PUxBSzxJTkZJMkEwtLQxMT82RjM0NjE/M0Q0vLDI2k9IZARoZU80nMjAwQCOKzMpRlpqTmMzAAAALEHb4=";
+const TOKEN = "007eJxTYHjk9bB8wWT7iIdzu5J5YppvrvN33iG74Gr/lwlP9zRvmTxZgSHFyNIwNTHFLDElOdkkycTC0tDExDzZ2MzQ2MQ8zdDS0kk7Ob0hkJGBs02CkZEBAkF8VoayzJTUfAYGAAg0IJY=";
 const CHANNEL = "video";
 
 const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
@@ -8,23 +8,23 @@ let localTracks = [];
 let remoteUsers = {};
 let screenTrack = null;
 let isJoined = false;
-
+let currentUser = '';
 let mediaRecorder;
 let audioChunks = [];
 
-const socket = io('https://video-chamada-r6rl.onrender.com/'); 
 
-let currentUser = ''; // Valor padrão
-socket.on('user name', (name) => {
-    currentUser = name || 'Anônimo';
-    console.log(`Seu nome é ${currentUser}`);
-});
+let lastTranscriptionTime = 0;
+const transcriptionInterval = 10000; 
+
+const socket = io('https://video-chamada-r6rl.onrender.com/'); 
 
 
 socket.on('user name', (name) => {
     currentUser = name;
     console.log(`Seu nome é ${currentUser}`);
 });
+
+let transcriptionContent = document.getElementById('transcription-content');
 
 function updateMeetingDate() {
     const dateElement = document.getElementById('meeting-date');
@@ -77,7 +77,7 @@ let joinAndDisplayLocalStream = async () => {
 
         const player = `<div class="video-container" id="user-container-${UID}">
                             <div class="video-player" id="user-${UID}"></div>
-                    </div>`;
+                       </div>`;
         document.getElementById('video-streams').insertAdjacentHTML('beforeend', player);
         localTracks[1].play(`user-${UID}`);
         await client.publish([localTracks[0], localTracks[1]]);
@@ -98,8 +98,9 @@ let joinStream = async () => {
     document.getElementById('join-btn').style.display = 'none';
     document.getElementById('stream-wrapper').style.display = 'flex';
     document.getElementById('stream-controls-wrapper').style.display = 'flex';
-    document.getElementById('chat-wrapper').style.display = 'flex'; 
+    document.getElementById('chat-wrapper').style.display = 'flex';
 };
+
 
 let handleUserJoined = async (user, mediaType) => {
     remoteUsers[user.uid] = user;
@@ -112,8 +113,8 @@ let handleUserJoined = async (user, mediaType) => {
         }
 
         const newPlayer = `<div class="video-container" id="user-container-${user.uid}">
-                            <div class="video-player" id="user-${user.uid}"></div>
-                        </div>`;
+                              <div class="video-player" id="user-${user.uid}"></div>
+                         </div>`;
         document.getElementById('video-streams').insertAdjacentHTML('beforeend', newPlayer);
         user.videoTrack.play(`user-${user.uid}`);
     }
@@ -125,60 +126,20 @@ let handleUserJoined = async (user, mediaType) => {
 
 let handleUserLeft = async (user) => {
     delete remoteUsers[user.uid];
-
     const player = document.getElementById(`user-container-${user.uid}`);
     if (player) {
         player.remove();
     }
 
-    console.log(`Usuário ${user.uid} saiu. Outros ainda estão na chamada.`);
-};
+    if (Object.keys(remoteUsers).length === 0) {
+        
+        document.getElementById('stream-wrapper').style.display = 'none';
+        document.getElementById('chat-wrapper').style.display = 'none';
+        document.getElementById('summary-wrapper').style.display = 'flex';
 
-let leaveMeeting = async () => {
-    for (let track of localTracks) {
-        track.stop();
-        track.close();
+        loadSummary();
     }
-
-
-    await client.leave();
-
-    window.location.href = '/informacoes.html';
 };
-
-function startTimer() {
-const timerDisplay = document.getElementById('meeting-timer');
-let seconds = 0;
-
-timerInterval = setInterval(() => {
-    seconds++;
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-
-    timerDisplay.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-}, 1000); 
-}
-
-function stopTimer() {
-clearInterval(timerInterval); 
-const timerDisplay = document.getElementById('meeting-timer').textContent;
-localStorage.setItem('meetingDuration', timerDisplay); 
-console.log("Cronômetro parado. Tempo total:", timerDisplay);
-}
-
-document.getElementById('leave-btn').addEventListener('click', () => {
-stopTimer(); 
-leaveMeeting(); 
-});
-
-
-
-document.getElementById('leave-btn').addEventListener('click', () => {
-stopTimer(); 
-leaveMeeting(); 
-});
-
 
 const audioActivity = {};
 
@@ -217,69 +178,80 @@ let audioContext = new (window.AudioContext || window.webkitAudioContext)();
 let analyser = audioContext.createAnalyser();
 let microphone;
 let audioLevel = 0;
-let threshold = 0.03;  
-let minVoiceFrequency = 150;  
-let maxVoiceFrequency = 3000;  
+let threshold = 0.03;  // Ajuste esse valor conforme necessário (valor entre 0 e 1)
+let minVoiceFrequency = 150;  // Frequência mínima da voz humana (em Hz)
+let maxVoiceFrequency = 3000;  // Frequência máxima da voz humana (em Hz)
 
 let isSpeaking = false;
 let stopSpeakingTimeout;
 
 async function setupAudio() {
     try {
+        // Obtendo o fluxo de áudio do usuário
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
+        // Conectando a fonte de áudio (microfone) ao analisador
         microphone = audioContext.createMediaStreamSource(stream);
         microphone.connect(analyser);
 
-        analyser.fftSize = 256;  
+        // Configuração do analisador
+        analyser.fftSize = 256;  // Tamanho do FFT (pode ajustar para melhor resolução)
         let bufferLength = analyser.frequencyBinCount;
         let dataArray = new Uint8Array(bufferLength);
 
+        // Função de processamento de áudio
         function checkAudioLevel() {
             analyser.getByteFrequencyData(dataArray);
 
+            // Calculando o nível de áudio total
             let sum = 0;
             for (let i = 0; i < bufferLength; i++) {
                 sum += dataArray[i];
             }
-            audioLevel = sum / bufferLength;  
+            audioLevel = sum / bufferLength;  // Média do nível de áudio
 
+            // Verificando se o áudio está na faixa de frequências da voz
             let voiceDetected = false;
             for (let i = 0; i < bufferLength; i++) {
                 let frequency = analyser.frequencyBinCount / bufferLength * i;
+                // Verifica se a frequência está na faixa da fala humana
                 if (frequency >= minVoiceFrequency && frequency <= maxVoiceFrequency && dataArray[i] > threshold * 255) {
                     voiceDetected = true;
                     break;
                 }
             }
 
-            const videoContainer = document.querySelector('.video-container'); 
+            const videoContainer = document.querySelector('.video-container'); // Pega a div da câmera (se necessário ajusta o seletor)
 
+            // Só ativa a borda verde se detectar voz e garantir que a borda não apareça imediatamente
             if (voiceDetected && !isSpeaking) {
-                isSpeaking = true;  
+                isSpeaking = true;  // Marca que o usuário está falando
                 if (videoContainer && !videoContainer.style.border) {
-                    videoContainer.style.border = '5px solid green'; 
+                    videoContainer.style.border = '5px solid green';  // Ativando a borda verde
                 }
             }
 
+            // Se o usuário não estiver falando, configurar um temporizador para remover a borda
             if (!voiceDetected && isSpeaking) {
                 stopSpeakingTimeout = setTimeout(() => {
-                    isSpeaking = false;  
+                    isSpeaking = false;  // Marca que o usuário parou de falar
                     if (videoContainer) {
-                        videoContainer.style.border = '';  
+                        videoContainer.style.border = '';  // Removendo a borda verde
                     }
-                }, 200);  
+                }, 200);  // Tempo de 200ms para remover a borda após a última fala detectada
             }
 
+            // Continuar verificando o áudio a cada intervalo
             requestAnimationFrame(checkAudioLevel);
         }
 
-        checkAudioLevel();  
+        checkAudioLevel();  // Inicia a verificação do áudio
     } catch (err) {
         console.log('Erro ao acessar o microfone:', err);
     }
 }
 
+// Chame a função setupAudio para iniciar o processamento do áudio
 setupAudio();
 
 let leaveAndRemoveLocalStream = async () => {
@@ -305,6 +277,8 @@ let leaveAndRemoveLocalStream = async () => {
         }
     }
     
+    window.location.href = 'informacoes.html';
+
     function sendMessage() {
         const chatInput = document.getElementById('chat-input');
         const message = chatInput.value.trim();
@@ -315,14 +289,11 @@ let leaveAndRemoveLocalStream = async () => {
     }
     
     socket.on('chat message', (msg) => {
-        console.log('Mensagem recebida do servidor:', msg);
         const chatBox = document.getElementById('chat-box');
-        if (chatBox) {
-            chatBox.innerHTML += `<p>${msg}</p>`;
-            chatBox.scrollTop = chatBox.scrollHeight;
-        } else {
-            console.error('Elemento chat-box não encontrado.');
-        }
+        const msgElement = document.createElement('p');
+        msgElement.textContent = msg;
+        chatBox.appendChild(msgElement);
+        chatBox.scrollTop = chatBox.scrollHeight;
     });
 
     if (mediaRecorder) {
@@ -391,13 +362,12 @@ let sendMessage = async () => {
     const messageInput = document.getElementById('chat-input');
     const message = messageInput.value.trim();
     if (message !== '') {
-        const userName = currentUser || 'Anônimo';
+        const userName = currentUser || 'Talklog';
         const formattedMessage = `${userName}: ${message}`;
-        socket.emit('chat message', formattedMessage);  // Envia mensagem para o servidor
+        socket.emit('chat message', formattedMessage);
         messageInput.value = '';
     }
 };
-
 
 socket.on('chat message', (msg) => {
     const chatBox = document.getElementById('chat-box');
@@ -422,51 +392,28 @@ async function startTranscription() {
             audioChunks.push(event.data);
         };
 
-        
-        const startRecording = async () => {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        
-                mediaRecorder = new MediaRecorder(stream);
-                mediaRecorder.ondataavailable = (event) => {
-                    audioChunks.push(event.data); 
-                };
-        
-                mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                    sendAudioToServer(audioBlob);
-                };
-        
-                mediaRecorder.start();
-                console.log("Gravação iniciada.");
-        
-                setTimeout(() => {
-                    mediaRecorder.stop();
-                    console.log("Gravação parada.");
-                }, 5000);  
-            } catch (error) {
-                console.error('Erro ao acessar o microfone:', error);
-            }
-        };
-        
-        const sendAudioToServer = async (audioBlob) => {
+        mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
             const formData = new FormData();
-            formData.append('audio', audioBlob, 'audio.wav');
-        
+            formData.append('audio', audioBlob, 'audio.mp3');
+
             try {
-                const response = await fetch('(https://audionode.onrender.com/v1/uploadFile', {
+                const response = await fetchWithRetry('https://video-chamada-r6rl.onrender.com/transcribe', {
                     method: 'POST',
-                    body: formData,
+                    body: formData
                 });
-        
+
                 if (response.ok) {
-                    console.log('Áudio enviado com sucesso!');
-                    alert("Áudio enviado com sucesso!");
+                    const transcription = await response.json();
+                    updateTranscription(transcription.text);
+                } else if (response.status === 429) {
+                    console.error('Erro: Muitas requisições enviadas.');
+                    alert('Você está enviando muitas requisições. Tente novamente mais tarde.');
                 } else {
-                    console.error('Erro ao enviar o áudio:', response.status);
+                    console.error('Erro ao transcrever o áudio: ', response.status);
                 }
             } catch (error) {
-                console.error('Erro ao enviar o áudio:', error);
+                console.error('Erro ao processar a transcrição: ', error);
             }
         };
 
@@ -479,6 +426,11 @@ async function startTranscription() {
 
 function updateTranscription(text) {
     transcriptionContent.innerText += text + '\n'; 
+}
+
+async function loadSummary() {
+    const summaryContent = document.getElementById('summary-content');
+    summaryContent.innerHTML = '<p>Resumo da reunião: ...</p>';
 }
 
 async function fetchWithRetry(url, options, retries = 3) {
