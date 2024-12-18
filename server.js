@@ -5,12 +5,22 @@ const record = require("node-record-lpcm16");
 const ffmpeg = require("fluent-ffmpeg");
 const FormData = require("form-data");
 const axios = require("axios");
+const http = require("http");
+const { Server } = require("socket.io");
 
 const app = express();
+const server = http.createServer(app); // Servidor HTTP
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:3000", // Atualize conforme necessário
+    methods: ["GET", "POST"],
+  },
+});
+
 const port = 3000;
 
-const cors = require('cors');
-app.use(cors({ origin: 'http://localhost:3000' }));
+const cors = require("cors");
+app.use(cors({ origin: "http://localhost:3000" }));
 
 let recordingProcess = null;
 const audioFolder = path.join(__dirname, "audio");
@@ -143,7 +153,6 @@ app.get("/meetings", (req, res) => {
   res.json(meetings);
 });
 
-// Rota para buscar detalhes de uma reunião pelo ID
 app.get("/meeting/:id", (req, res) => {
   const meetingId = parseInt(req.params.id);
   const meeting = meetings.find((m) => m.id === meetingId);
@@ -153,6 +162,21 @@ app.get("/meeting/:id", (req, res) => {
   }
 
   res.json(meeting);
+});
+
+// Configuração do chat usando Socket.IO
+io.on("connection", (socket) => {
+  console.log("Um usuário conectou:", socket.id);
+
+  // Recebe mensagem do chat e transmite a todos os clientes
+  socket.on("chat message", (message) => {
+    console.log("Mensagem recebida:", message);
+    io.emit("chat message", message);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Usuário desconectado:", socket.id);
+  });
 });
 
 // Rota para o caminho raiz
@@ -167,7 +191,7 @@ app.get("/", (req, res) => {
 // Servir arquivos estáticos da pasta "public"
 app.use(express.static(path.join(__dirname, "public")));
 
-// Inicialização do servidor
-app.listen(port, () => {
+// Inicialização do servidor (usando server com Socket.IO)
+server.listen(port, () => {
   console.log(`Servidor rodando na porta ${port}`);
 });

@@ -315,11 +315,14 @@ let leaveAndRemoveLocalStream = async () => {
     }
     
     socket.on('chat message', (msg) => {
+        console.log('Mensagem recebida do servidor:', msg);
         const chatBox = document.getElementById('chat-box');
-        const msgElement = document.createElement('p');
-        msgElement.textContent = msg;
-        chatBox.appendChild(msgElement);
-        chatBox.scrollTop = chatBox.scrollHeight;
+        if (chatBox) {
+            chatBox.innerHTML += `<p>${msg}</p>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        } else {
+            console.error('Elemento chat-box não encontrado.');
+        }
     });
 
     if (mediaRecorder) {
